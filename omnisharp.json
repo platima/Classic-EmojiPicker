@@ -1,0 +1,16 @@
+{
+    "MSBuild": {
+        "UseLegacySdkResolver": false,
+        "EnablePackageAutoRestore": true,
+        "LoadProjectsOnDemand": false
+    },
+    "FormattingOptions": {
+        "EnableEditorConfigSupport": true,
+        "OrganizeImports": true
+    },
+    "RoslynExtensionsOptions": {
+        "EnableAnalyzersSupport": true,
+        "EnableImportCompletion": true,
+        "EnableDecompilationSupport": true
+    }
+}

@@ -6,7 +6,7 @@ namespace EmojiPicker
 {
     public partial class MainWindow : Window
     {
-        private List<Emoji> allEmojis;
+        private List<Emoji> allEmojis = new List<Emoji>();
         private string currentCategory = "Smileys";
         private bool isSearchBoxFocused = false;
 
@@ -34,7 +34,7 @@ namespace EmojiPicker
                 new Emoji("🤔", "Thinking face", "Smileys", new[] { "think", "wondering", "hmm" }),
                 new Emoji("👍", "Thumbs up", "Smileys", new[] { "good", "approve", "like" }),
                 new Emoji("👎", "Thumbs down", "Smileys", new[] { "bad", "disapprove", "dislike" }),
-                new Emoji("😊", "Blush", "Smileys", new[] { "blush", "shy", "happy" }),
+                new Emoji("😌", "Relieved face", "Smileys", new[] { "relieved", "peaceful", "calm" }),
                 new Emoji("😎", "Smiling face with sunglasses", "Smileys", new[] { "cool", "sunglasses", "awesome" }),
                 new Emoji("🙌", "Raising hands", "Smileys", new[] { "celebration", "hands", "praise" }),
                 new Emoji("🙏", "Folded hands", "Smileys", new[] { "pray", "thanks", "please" }),
@@ -80,14 +80,12 @@ namespace EmojiPicker
             var categoryEmojis = allEmojis.Where(e => e.Category == category).ToList();
             EmojiGrid.ItemsSource = categoryEmojis;
             UpdateTabSelection(category);
-        }
-
-        private void UpdateTabSelection(string category)
+        }        private void UpdateTabSelection(string category)
         {
             // Reset all tabs
             SmileysTab.Style = (Style)FindResource("TabButtonStyle");
+            PeopleTab.Style = (Style)FindResource("TabButtonStyle");
             ObjectsTab.Style = (Style)FindResource("TabButtonStyle");
-            SymbolsTab.Style = (Style)FindResource("TabButtonStyle");
 
             // Set selected tab
             switch (category)
@@ -96,10 +94,10 @@ namespace EmojiPicker
                     SmileysTab.Style = (Style)FindResource("SelectedTabStyle");
                     break;
                 case "People":
-                    ObjectsTab.Style = (Style)FindResource("SelectedTabStyle");
+                    PeopleTab.Style = (Style)FindResource("SelectedTabStyle");
                     break;
                 case "Objects":
-                    SymbolsTab.Style = (Style)FindResource("SelectedTabStyle");
+                    ObjectsTab.Style = (Style)FindResource("SelectedTabStyle");
                     break;
             }
         }

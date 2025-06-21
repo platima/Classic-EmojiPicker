@@ -101,18 +101,17 @@
         <StackPanel Grid.Row="1" 
                     Orientation="Horizontal" 
                     Background="White"
-                    Height="40">
-            <Button x:Name="SmileysTab" 
+                    Height="40">            <Button x:Name="SmileysTab" 
                     Content="😊" 
                     Style="{StaticResource SelectedTabStyle}"
                     Click="CategoryTab_Click"
                     Tag="Smileys"/>
-            <Button x:Name="ObjectsTab" 
-                    Content="😉" 
+            <Button x:Name="PeopleTab" 
+                    Content="�" 
                     Style="{StaticResource TabButtonStyle}"
                     Click="CategoryTab_Click"
                     Tag="People"/>
-            <Button x:Name="SymbolsTab" 
+            <Button x:Name="ObjectsTab" 
                     Content="🎧" 
                     Style="{StaticResource TabButtonStyle}"
                     Click="CategoryTab_Click"
