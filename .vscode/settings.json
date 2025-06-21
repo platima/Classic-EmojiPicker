@@ -3,7 +3,6 @@
     "dotnet.symbolSearch.searchReferenceAssemblies": true,
     "omnisharp.enableRoslynAnalyzers": true,
     "omnisharp.enableEditorConfigSupport": true,
-    "omnisharp.enableImportCompletion": true,
-    "omnisharp.organizeImportsOnFormat": true,
-    "omnisharp.useModernNet": true
+    "omnisharp.useModernNet": true,
+    "dotnet.formatting.organizeImportsOnFormat": true
 }

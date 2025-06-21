@@ -9,7 +9,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-      steps:
+    
+    steps:
     - uses: actions/checkout@v4
     
     - name: Setup .NET
