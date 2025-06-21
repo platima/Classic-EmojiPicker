@@ -3,10 +3,17 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-      <!-- Application Info -->
+    
+    <!-- Code Analysis -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <WarningsNotAsErrors />
+    
+    <!-- Application Info -->
     <AssemblyTitle>Windows 10 Emoji Picker</AssemblyTitle>
     <AssemblyDescription>Lightweight Windows 10 style emoji picker for Windows 11</AssemblyDescription>
     <AssemblyProduct>Classic EmojiPicker</AssemblyProduct>

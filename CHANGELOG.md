@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings/preferences window
 - Auto-start with Windows option
 
+### Added (Development)
+- Comprehensive code quality and formatting standards
+- EditorConfig for consistent code formatting across editors
+- PowerShell script for local code quality checking (`code-quality-simple.ps1`)
+- Enhanced GitHub Actions with code analysis and format verification
+- .NET static code analysis with latest rules
+- Automated code formatting with `dotnet format`
+- Enterprise-grade development workflow documentation
+
 ## [0.1.0] - 2025-06-21
 
 ### Added

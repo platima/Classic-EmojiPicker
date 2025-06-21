@@ -87,6 +87,37 @@ EmojiPicker/
     └── AssemblyInfo.cs     # Assembly metadata
 ```
 
+### Code Quality & Standards
+
+The project follows enterprise-grade code quality practices:
+
+#### **Formatting & Style**
+- **EditorConfig** (`.editorconfig`) - Enforces consistent code formatting
+- **C# Conventions** - PascalCase naming, 4-space indentation
+- **Auto-formatting** - `dotnet format` for automatic code cleanup
+
+#### **Code Analysis**
+- **Static Analysis** - .NET analyzers enabled with latest rules
+- **Build Validation** - Warnings and errors caught during build
+- **Performance Checks** - Memory and startup optimisation validation
+
+#### **Quality Assurance Tools**
+```powershell
+# Local code quality check (equivalent to cppcheck)
+.\code-quality-simple.ps1
+
+# Auto-fix formatting issues
+dotnet format
+
+# Manual detailed analysis
+dotnet build --configuration Release --verbosity normal
+```
+
+#### **CI/CD Integration**
+- **GitHub Actions** - Automated build and quality checks
+- **Release Workflow** - Quality gates before releases
+- **Format Verification** - Prevents improperly formatted code
+
 ### Adding Emojis
 
 To add more emojis, edit the `InitializeEmojis()` method in `MainWindow.xaml.cs`:
@@ -104,11 +135,49 @@ Current categories:
 
 ## Contributing
 
+We welcome contributions! Please follow these guidelines:
+
+### **Development Setup**
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Clone your fork: `git clone https://github.com/platima/Classic-EmojiPicker.git`
+3. Open in Visual Studio 2022 or VS Code
+4. Ensure .NET 8 SDK is installed
+
+### **Code Quality Standards**
+Before submitting, ensure your code meets quality standards:
+
+```powershell
+# Run full quality check
+.\code-quality-simple.ps1
+
+# Fix formatting automatically
+dotnet format
+
+# Build and test
+dotnet build --configuration Release
+```
+
+### **Contribution Workflow**
+1. Create a feature branch (`git checkout -b feature/amazing-feature`)
+2. Make your changes following the coding standards
+3. Run code quality checks locally
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+### **Pull Request Guidelines**
+- ✅ Code quality checks must pass
+- ✅ Follow existing code style (enforced by EditorConfig)
+- ✅ Add appropriate comments and documentation
+- ✅ Keep changes focused and atomic
+- ✅ Update CHANGELOG.md if needed
+
+### **Code Style**
+- **Language**: C# 12 with modern features
+- **Formatting**: Enforced by `.editorconfig` and `dotnet format`
+- **Naming**: PascalCase for public members, camelCase for private
+- **Comments**: Australian English, clear and concise
+- **Performance**: Keep memory usage minimal (~119MB target)
 
 ## Roadmap
 

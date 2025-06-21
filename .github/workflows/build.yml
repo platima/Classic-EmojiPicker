@@ -9,8 +9,7 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    
-    steps:
+      steps:
     - uses: actions/checkout@v4
     
     - name: Setup .NET
@@ -23,6 +22,12 @@ jobs:
       
     - name: Build
       run: dotnet build --no-restore --configuration Release
+      
+    - name: Code Analysis
+      run: dotnet build --no-restore --configuration Release --verbosity normal
+      
+    - name: Format Check
+      run: dotnet format --verify-no-changes --verbosity diagnostic
       
     - name: Test
       run: dotnet test --no-build --verbosity normal --configuration Release

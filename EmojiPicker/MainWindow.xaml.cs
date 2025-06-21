@@ -76,18 +76,20 @@ namespace EmojiPicker
                 new Emoji("🏆", "Trophy", "Objects", new[] { "trophy", "winner", "award" }),
                 new Emoji("🎊", "Confetti ball", "Objects", new[] { "confetti", "party", "celebration" })
             };
-        }        private void LoadCategory(string category)
+        }
+        private void LoadCategory(string category)
         {
             if (EmojiGrid == null) return; // UI not ready yet
-            
+
             var categoryEmojis = allEmojis.Where(e => e.Category == category).ToList();
             EmojiGrid.ItemsSource = categoryEmojis;
             UpdateTabSelection(category);
-        }        private void UpdateTabSelection(string category)
+        }
+        private void UpdateTabSelection(string category)
         {
             // UI not ready yet
             if (SmileysTab == null || PeopleTab == null || ObjectsTab == null) return;
-            
+
             // Reset all tabs
             SmileysTab.Style = (Style)FindResource("TabButtonStyle");
             PeopleTab.Style = (Style)FindResource("TabButtonStyle");
@@ -114,7 +116,7 @@ namespace EmojiPicker
             {
                 currentCategory = category;
                 LoadCategory(category);
-                
+
                 // Clear search if active
                 if (isSearchBoxFocused)
                 {
@@ -144,10 +146,11 @@ namespace EmojiPicker
                 isSearchBoxFocused = false;
                 LoadCategory(currentCategory);
             }
-        }        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        }
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (EmojiGrid == null) return; // UI not ready yet
-            
+
             if (isSearchBoxFocused && !string.IsNullOrWhiteSpace(SearchBox.Text))
             {
                 SearchEmojis(SearchBox.Text);
@@ -175,10 +178,10 @@ namespace EmojiPicker
                 try
                 {
                     System.Windows.Clipboard.SetText(emoji);
-                    
+
                     // Optional: Show brief feedback
                     button.Background = new SolidColorBrush(Color.FromRgb(0, 120, 212));
-                    
+
                     // Reset background after brief moment
                     var timer = new System.Windows.Threading.DispatcherTimer();
                     timer.Interval = TimeSpan.FromMilliseconds(150);
@@ -188,7 +191,7 @@ namespace EmojiPicker
                         timer.Stop();
                     };
                     timer.Start();
-                    
+
                     // Close window after copying (like Windows 10 behavior)
                     this.WindowState = WindowState.Minimized;
                     this.Hide();

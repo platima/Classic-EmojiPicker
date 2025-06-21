@@ -53,6 +53,7 @@ See Project README.md
 - Code format must abide by the rules in .clang-format if it exists
 - Do not add "// FIXED" comments to code
 - Do not stray from the users request or make changes that were not asked for
+- The GitHub repository URL is https://github.com/platima/Classic-EmojiPicker and currently private
 
 ## File Dependencies
 - **seguiemj.ttf**: Critical font file that must be placed in Fonts/ directory
