@@ -105,9 +105,8 @@
                     Content="😊" 
                     Style="{StaticResource SelectedTabStyle}"
                     Click="CategoryTab_Click"
-                    Tag="Smileys"/>
-            <Button x:Name="PeopleTab" 
-                    Content="�" 
+                    Tag="Smileys"/>            <Button x:Name="PeopleTab" 
+                    Content="👨" 
                     Style="{StaticResource TabButtonStyle}"
                     Click="CategoryTab_Click"
                     Tag="People"/>
