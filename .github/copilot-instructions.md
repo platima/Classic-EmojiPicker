@@ -14,8 +14,8 @@ See Project README.md
 2. No external dependencies that do not ship with Windows 11 in final executable
 
 ## Technical Stack & Decisions
-- **Framework**: WPF with .NET Framework 4.8 (native to Windows 11)
-- **Language**: C# 
+- **Framework**: WPF with .NET 8 (modern, performant, included with Windows 11)
+- **Language**: C# 12 with modern language features
 - **UI**: XAML with custom styling to match Windows 10 design
 - **Font**: Custom bundled Windows 10 emoji font (seguiemj.ttf)
 - **Target Platform**: Windows 11 (standalone application, no system integration initially)
@@ -29,8 +29,8 @@ See Project README.md
 
 ## Development Environment
 - User has: Visual Studio Enterprise, VS Code, Windows 11, GitHub account
-- Project is version controlled in Git/GitHub
-- Building with standard Visual Studio WPF project workflow
+- Project targets: .NET 8 (modern SDK-style project)
+- Building with: Standard Visual Studio 2022 WPF workflow
 
 ## Key Design Principles
 - **Simplicity**: Zero bloat, just emoji picking functionality
@@ -56,5 +56,5 @@ See Project README.md
 
 ## File Dependencies
 - **seguiemj.ttf**: Critical font file that must be placed in Fonts/ directory
-- **Visual Studio**: Primary development environment
-- **.NET Framework 4.8**: Must be available (comes with Windows 11)
+- **Visual Studio 2022**: Primary development environment (VS Code and VS 2019 may work)
+- **.NET 8 (and SDK)**: Must be installed (may need separate download)

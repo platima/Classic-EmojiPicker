@@ -16,9 +16,9 @@ A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 
 
 ## Requirements
 
-- Windows 11 (or Windows 10)
-- .NET Framework 4.8 (included with Windows 11)
-- Visual Studio 2019/2022 or Visual Studio Code (for development)
+- Windows 11 (or Windows 10 version 1809+)
+- .NET 8 Runtime (download from Microsoft if not installed)
+- Visual Studio 2022 or Visual Studio Code with C# extension (for development)
 
 ## Installation
 
