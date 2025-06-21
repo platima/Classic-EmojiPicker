@@ -1,8 +1,19 @@
 <img align="right" src="https://visitor-badge.laobi.icu/badge?page_id=platima.cep" height="20" />
 
-# Classic Emoji Picker
+# Classic Emoji Picker v0.1.0
 
 A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 11 users who prefer the simpler, cleaner interface without GIFs and bloated features.
+
+## ✅ Current Status: v0.1.0 - Working Release
+
+This version includes core functionality and is ready for daily use:
+
+- ✅ **Builds and runs successfully** on Windows 11
+- ✅ **Core emoji picking functionality** working
+- ✅ **Three categories** with ~70 popular emojis
+- ✅ **Search functionality** by name and keywords
+- ✅ **Windows 10 styling** and behavior
+- ✅ **One-click copy to clipboard** with auto-minimize
 
 ## Features
 
@@ -22,8 +33,8 @@ A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 
 
 ## Installation
 
-### Option 1: Download Release (Coming Soon)
-Download the latest release from the [Releases](../../releases) page.
+### Option 1: Download Release
+Download the latest v0.1.0 release from the [Releases](../../releases) page (coming soon).
 
 ### Option 2: Build from Source
 
@@ -101,13 +112,20 @@ Current categories:
 
 ## Roadmap
 
+### v0.2.0 (Next Release)
 - [ ] Add more emoji categories (Animals, Food, Travel, etc.)
-- [ ] Expand emoji database with more emojis
+- [ ] Expand emoji database with more emojis  
+- [ ] Improved error handling and user feedback
+
+### v0.3.0 (Future)
 - [ ] Global hotkey support (Win+. replacement)
-- [ ] Recently used emojis
-- [ ] Skin tone modifiers
+- [ ] Recently used emojis section
+- [ ] Skin tone modifiers for people emojis
+
+### v1.0.0 (Stable Release)
 - [ ] Settings/preferences window
 - [ ] Auto-start with Windows option
+- [ ] Installer/packaging for easy distribution
 
 ## License
 
@@ -117,7 +135,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Original Windows 10 emoji picker design by Microsoft
 - Windows 10 emoji font (seguiemj.ttf) by Microsoft
-- Built with WPF and .NET Framework 4.8
+- Built with WPF and .NET 8.0
 
 ## Why This Project?
 

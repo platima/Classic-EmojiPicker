@@ -15,38 +15,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings/preferences window
 - Auto-start with Windows option
 
-## [1.0.0] - 2025-06-21
+## [0.1.0] - 2025-06-21
 
 ### Added
-- Initial release of Windows 10 Emoji Picker recreation
-- Clean Windows 10-style user interface
+- Initial working release of Windows 10 Emoji Picker recreation
+- Clean Windows 10-style user interface with custom styling
 - Three emoji categories: Smileys & Emotion, People & Body, Objects
 - Real-time search functionality with keyword filtering
 - One-click emoji copying to clipboard
 - Custom Windows 10 emoji font support (seguiemj.ttf)
 - ESC key to close application
-- Auto-minimize after copying emoji
-- Responsive emoji grid layout
+- Auto-minimize after copying emoji (Windows 10 behavior)
+- Responsive emoji grid layout with proper wrapping
 - Tooltip display showing emoji names on hover
 - Search box with placeholder text and focus handling
+- Tab-based category navigation with visual selection
 
 ### Technical
-- Built with WPF and .NET Framework 4.8
+- Built with WPF and .NET 8.0 targeting Windows
 - Embedded emoji font as application resource
-- MVVM-style data binding for emoji display
+- Data binding for emoji display with ItemsControl
 - Custom button styles matching Windows 10 design
-- Proper keyboard navigation support
+- Proper null safety and event handling
+- Lightweight memory footprint (~119MB)
 
-### Font Support
-- Bundled Windows 10 emoji font (seguiemj.ttf)
-- Automatic fallback to system Segoe UI Emoji font
-- Support for custom emoji font replacement
+### Fixed
+- Null reference exceptions during UI initialization
+- Event timing issues with SearchBox TextChanged events
+- Missing using statements for System.Linq and Collections
+- XAML Unicode character corruption in People tab
 
 ### Performance
-- Lightweight application with minimal memory footprint
-- Fast emoji loading and search filtering
-- Optimized for quick startup and usage
+- Fast application startup and emoji loading
+- Efficient search filtering with LINQ
+- Optimized for quick daily usage
 
 ## Version History
+- **v0.1.0** - First working release, basic functionality complete
 
 - **1.0.0** - Initial release with core functionality

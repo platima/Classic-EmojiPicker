@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build Release
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Publish Self-Contained
+      run: dotnet publish EmojiPicker/EmojiPicker.csproj --configuration Release --runtime win-x64 --self-contained true --output ./publish
+      
+    - name: Create Release Archive
+      run: |
+        Compress-Archive -Path ./publish/* -DestinationPath ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
+        name: Classic Emoji Picker ${{ github.ref_name }}
+        body: |
+          ## Classic Emoji Picker ${{ github.ref_name }}
+          
+          Download the ZIP file below, extract it, and run `EmojiPicker.exe`.
+          
+          ### What's New
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          
+          ### Requirements
+          - Windows 11 or Windows 10 (version 1809+)
+          - No additional dependencies required (self-contained)
+        draft: false
+        prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
