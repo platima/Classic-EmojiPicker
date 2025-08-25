@@ -2,6 +2,11 @@
 
 # Classic Emoji Picker v0.1.0
 
+[![Build and Test](https://github.com/platima/Classic-EmojiPicker/actions/workflows/build.yml/badge.svg)](https://github.com/platima/Classic-EmojiPicker/actions/workflows/build.yml)
+[![Release](https://github.com/platima/Classic-EmojiPicker/actions/workflows/release.yml/badge.svg)](https://github.com/platima/Classic-EmojiPicker/actions/workflows/release.yml)
+[![Latest Release](https://img.shields.io/github/v/release/platima/Classic-EmojiPicker)](https://github.com/platima/Classic-EmojiPicker/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 11 users who prefer the simpler, cleaner interface without GIFs and bloated features.
 
 ## ✅ Current Status: v0.1.0 - Working Release
