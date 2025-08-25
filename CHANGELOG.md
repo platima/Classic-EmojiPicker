@@ -5,11 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased - v0.1.1] - 2025-06-21
 
-### Planned
+### Added
+- ✅ **Borderless window design** - Removed title bar for authentic Windows 10 appearance
+- ✅ **Bottom category tabs** - Moved emoji categories to bottom with improved layout
+- ✅ **Recent emojis tab** 🕒 - Track and display recently used emojis (up to 24)
+- ✅ **Enhanced visual design** - Rounded corners, drop shadow, and modern styling
+- ✅ **Improved emoji rendering** - Better font rendering settings for colour emoji display
+- ✅ **Instant close behavior** - Application closes immediately after emoji selection
+
+### Changed
+- Moved category tabs from top to bottom for Windows 10 authenticity
+- Application now closes immediately instead of minimizing after emoji copy
+- Enhanced visual appearance with modern rounded design
+- Recent emojis are now tracked and displayed in dedicated tab
+
+### Technical
+- Added Recent emoji tracking with configurable maximum (24 emojis)
+- Improved emoji button styling for better colour rendering
+- Added drop shadow effects and rounded corners
+- Enhanced window transparency and borderless design
+
+### v0.2.0 (Future)
 - Global hotkey support (Win+. replacement)
-- Recently used emojis section
 - More emoji categories (Animals, Food, Travel, etc.)
 - Skin tone modifiers for people emojis
 - Settings/preferences window

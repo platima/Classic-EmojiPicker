@@ -10,14 +10,32 @@ namespace EmojiPicker
     public partial class MainWindow : Window
     {
         private List<Emoji> allEmojis = new List<Emoji>();
+        private List<Emoji> recentEmojis = new List<Emoji>();
         private string currentCategory = "Smileys";
         private bool isSearchBoxFocused = false;
-
-        public MainWindow()
+        private const int MaxRecentEmojis = 24;        public MainWindow()
         {
             InitializeComponent();
             InitializeEmojis();
             LoadCategory(currentCategory);
+        }
+
+        private void MainWindow_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Allow dragging the window when clicking anywhere on it
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                this.DragMove();
+            }
+        }
+
+        private void DragHandle_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Allow dragging the window when clicking anywhere on the background
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                this.DragMove();
+            }
         }
 
         private void InitializeEmojis()
@@ -81,16 +99,26 @@ namespace EmojiPicker
         {
             if (EmojiGrid == null) return; // UI not ready yet
 
-            var categoryEmojis = allEmojis.Where(e => e.Category == category).ToList();
+            List<Emoji> categoryEmojis;
+            if (category == "Recent")
+            {
+                categoryEmojis = recentEmojis.ToList();
+            }
+            else
+            {
+                categoryEmojis = allEmojis.Where(e => e.Category == category).ToList();
+            }
+
             EmojiGrid.ItemsSource = categoryEmojis;
             UpdateTabSelection(category);
         }
         private void UpdateTabSelection(string category)
         {
             // UI not ready yet
-            if (SmileysTab == null || PeopleTab == null || ObjectsTab == null) return;
+            if (RecentTab == null || SmileysTab == null || PeopleTab == null || ObjectsTab == null) return;
 
             // Reset all tabs
+            RecentTab.Style = (Style)FindResource("TabButtonStyle");
             SmileysTab.Style = (Style)FindResource("TabButtonStyle");
             PeopleTab.Style = (Style)FindResource("TabButtonStyle");
             ObjectsTab.Style = (Style)FindResource("TabButtonStyle");
@@ -98,6 +126,9 @@ namespace EmojiPicker
             // Set selected tab
             switch (category)
             {
+                case "Recent":
+                    RecentTab.Style = (Style)FindResource("SelectedTabStyle");
+                    break;
                 case "Smileys":
                     SmileysTab.Style = (Style)FindResource("SelectedTabStyle");
                     break;
@@ -170,13 +201,20 @@ namespace EmojiPicker
 
             EmojiGrid.ItemsSource = filteredEmojis;
         }
-
         private void EmojiButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Content is string emoji)
             {
                 try
                 {
+                    // Find the emoji object
+                    var emojiObj = allEmojis.FirstOrDefault(e => e.Character == emoji);
+                    if (emojiObj != null)
+                    {
+                        AddToRecentEmojis(emojiObj);
+                    }
+
+                    // Copy to clipboard (for now, until cursor insertion is implemented)
                     System.Windows.Clipboard.SetText(emoji);
 
                     // Optional: Show brief feedback
@@ -192,14 +230,28 @@ namespace EmojiPicker
                     };
                     timer.Start();
 
-                    // Close window after copying (like Windows 10 behavior)
-                    this.WindowState = WindowState.Minimized;
-                    this.Hide();
+                    // Close application immediately
+                    this.Close();
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error copying emoji: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+            }
+        }
+
+        private void AddToRecentEmojis(Emoji emoji)
+        {
+            // Remove if already exists
+            recentEmojis.RemoveAll(e => e.Character == emoji.Character);
+
+            // Add to beginning
+            recentEmojis.Insert(0, emoji);
+
+            // Keep only the most recent MaxRecentEmojis
+            if (recentEmojis.Count > MaxRecentEmojis)
+            {
+                recentEmojis.RemoveAt(recentEmojis.Count - 1);
             }
         }
 
