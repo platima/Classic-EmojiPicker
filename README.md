@@ -1,57 +1,68 @@
 <img align="right" src="https://visitor-badge.laobi.icu/badge?page_id=platima.cep" height="20" />
 
-# Classic Emoji Picker v0.1.0
+# Classic Emoji Picker
 
-[![Build and Test](https://github.com/platima/Classic-EmojiPicker/actions/workflows/build.yml/badge.svg)](https://github.com/platima/Classic-EmojiPicker/actions/workflows/build.yml)
+[![Build](https://github.com/platima/Classic-EmojiPicker/actions/workflows/build.yml/badge.svg)](https://github.com/platima/Classic-EmojiPicker/actions/workflows/build.yml)
 [![Release](https://github.com/platima/Classic-EmojiPicker/actions/workflows/release.yml/badge.svg)](https://github.com/platima/Classic-EmojiPicker/actions/workflows/release.yml)
 [![Latest Release](https://img.shields.io/github/v/release/platima/Classic-EmojiPicker)](https://github.com/platima/Classic-EmojiPicker/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 11 users who prefer the simpler, cleaner interface without GIFs and bloated features.
 
-## ✅ Current Status: v0.1.0 - Working Release
+## ✅ Current Status: v0.1.1 - Working Release
 
 This version includes core functionality and is ready for daily use:
 
-- ✅ **Builds and runs successfully** on Windows 11
-- ✅ **Core emoji picking functionality** working
-- ✅ **Three categories** with ~70 popular emojis
-- ✅ **Search functionality** by name and keywords
-- ✅ **Windows 10 styling** and behavior
-- ✅ **One-click copy to clipboard** with auto-minimize
+- ✅ **Replaces Win+.** - takes over the emoji shortcut so it opens this picker instead of the built-in panel
+- ✅ **Full Unicode emoji set** (~1,400 emoji) in the original seven Windows 10 categories
+- ✅ **Direct insertion** - the selected emoji is typed into the app you were using
+- ✅ **Dark mode** - automatically follows the Windows light/dark setting
+- ✅ **Search functionality** by emoji name, focused and ready as soon as the picker opens
+- ✅ **Keyboard driven** - arrow keys move the selection, Enter inserts, ESC closes
+- ✅ **Installer** with optional start-with-Windows
 
 ## Features
 
 - **Clean Windows 10 Design** - Faithful recreation of the original Windows 10 emoji picker interface
-- **Three Categories** - Smileys & Emotion, People & Body, Objects
-- **Real-time Search** - Type to filter emojis by name or keywords
-- **One-Click Copy** - Click any emoji to copy it to clipboard
+- **Win+. Takeover** - Runs quietly in the system tray and opens on Win+. in place of the Windows 11 panel
+- **The Original Seven Categories** - Recent, Smiley faces & animals, People, Celebrations & objects, Food & plants, Transportation & places, Symbols
+- **Full Emoji Set** - Every renderable Unicode emoji from the database bundled with Emoji.Wpf (flags excluded, as in the Windows 10 picker)
+- **Direct Insertion** - Picking an emoji types it into the previously focused window; falls back to copying to the clipboard when no target exists
+- **Dark Mode** - Follows the system theme automatically and switches live when you change it
+- **Recent Emojis** - Recently used emojis are remembered between sessions
+- **Real-time Search** - Just start typing to filter emojis by name
+- **Keyboard Navigation** - Arrow keys move the highlighted emoji, Enter inserts it, ESC closes
 - **Lightweight** - No unnecessary features, GIFs, or bloat
-- **Custom Font Support** - Uses bundled Windows 10 emoji font (seguiemj.ttf)
-- **Keyboard Shortcuts** - ESC to close, search functionality
+- **True Colour Emoji** - Rendered with [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) using the system Segoe UI Emoji font
 
 ## Requirements
 
 - Windows 11 (or Windows 10 version 1809+)
-- .NET 8 Runtime (download from Microsoft if not installed)
-- Visual Studio 2022 or Visual Studio Code with C# extension (for development)
+- The installer is self-contained - no separate .NET runtime is required
+- For building from source: .NET 8 SDK and Visual Studio 2022 or VS Code with the C# extension
 
 ## Installation
 
-### Option 1: Download Release
-Download the latest v0.1.0 release from the [Releases](../../releases) page (coming soon).
+### Option 1: Installer (recommended)
+
+1. Download `EmojiPicker-Setup-<version>.exe` from the [Releases](../../releases) page.
+2. Run it (a per-user install - no administrator prompt).
+3. Tick **Start with Windows** when asked so Win+. works after every sign-in.
+
+Classic Emoji Picker then lives in the system tray. Press **Win+.** anywhere to open it. Right-click the tray icon for **Open**, a **Start with Windows** toggle, and **Exit**.
+
+> **Restoring the built-in panel:** while Classic Emoji Picker is running it intercepts Win+.. Choose **Exit** from the tray icon (and untick Start with Windows) to hand the shortcut back to Windows.
 
 ### Option 2: Build from Source
 
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/platima/Classic-EmojiPicker.git
-   cd windows10-emoji-picker
+   cd Classic-EmojiPicker
    ```
 
 2. **Open in Visual Studio:**
-   - Open `EmojiPicker.sln` in Visual Studio
-   - Ensure you have the `seguiemj.ttf` font file in the `Fonts/` directory
+   - Open `Classic-EmojiPicker.sln` in Visual Studio
    - Build → Build Solution (Ctrl+Shift+B)
    - Run → Start Debugging (F5)
 
@@ -61,35 +72,37 @@ Download the latest v0.1.0 release from the [Releases](../../releases) page (com
 
 ## Usage
 
-1. **Launch** the EmojiPicker.exe
-2. **Browse** categories using the tabs at the top
-3. **Search** by typing in the search box
-4. **Click** any emoji to copy it to your clipboard
-5. **Paste** the emoji anywhere (Ctrl+V)
+1. In any app, press **Win+.** (or double-click the tray icon) to open the picker where your cursor is
+2. **Type** to search - the search box is focused from the start
+3. **Browse** categories using the tabs at the bottom, or move the highlight with the arrow keys
+4. **Press Enter** (or click an emoji) to insert it into the app you were using
+5. If there is no target window, the emoji is copied to the clipboard instead
 
-The window will automatically minimize after copying an emoji, just like the original Windows 10 behavior.
+The picker hides after inserting an emoji (or when it loses focus, or on ESC) and waits in the tray for the next Win+.. Recently used emojis are saved to `%APPDATA%\ClassicEmojiPicker\recent.json` and shown in the Recent tab 🕒.
 
-## Font Configuration
+## How the Win+. takeover works
 
-The application is designed to use the Windows 10 emoji font (`seguiemj.ttf`) by default. If you don't have this font:
+The app installs a low-level keyboard hook that catches Win+. before the Windows shell does, opens this picker, and swallows the keystroke so the built-in panel doesn't also appear. This means the app must be running (it sits in the tray) for the shortcut to work - the installer's **Start with Windows** option keeps it available after every sign-in.
 
-1. **Bundled Font**: The project includes the font file in `Fonts/seguiemj.ttf`
-2. **System Font**: The app will fallback to the system's Segoe UI Emoji font
-3. **Custom Font**: Replace the font file in the Fonts directory with your preferred emoji font
+## Emoji Rendering
+
+Colour emoji rendering is handled by the [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) library, which uses the system's Segoe UI Emoji font (present on all supported versions of Windows). No bundled fonts are required.
 
 ## Development
 
 ### Project Structure
 ```
 EmojiPicker/
-├── MainWindow.xaml          # Main UI layout
-├── MainWindow.xaml.cs       # UI logic and emoji handling
-├── App.xaml                 # Application definition
-├── App.xaml.cs             # Application startup
-├── Fonts/
-│   └── seguiemj.ttf        # Windows 10 emoji font
-└── Properties/
-    └── AssemblyInfo.cs     # Assembly metadata
+├── MainWindow.xaml(.cs)     # Picker UI + emoji/keyboard/insertion logic
+├── App.xaml(.cs)           # Tray host: single instance, hook, theme, lifecycle
+├── HotkeyListener.cs       # Global Win+. keyboard hook (WH_KEYBOARD_LL)
+├── TextInjector.cs         # Types the emoji into the previously focused window
+├── ThemeManager.cs         # Follows the Windows light/dark setting
+├── Theme/                  # LightTheme.xaml / DarkTheme.xaml brush dictionaries
+├── Resources/app.ico       # Application + tray icon
+└── Properties/AssemblyInfo.cs
+installer/
+└── EmojiPicker.iss         # Inno Setup script (built in the release workflow)
 ```
 
 ### Code Quality & Standards
@@ -123,20 +136,22 @@ dotnet build --configuration Release --verbosity normal
 - **Release Workflow** - Quality gates before releases
 - **Format Verification** - Prevents improperly formatted code
 
-### Adding Emojis
+### Emoji Data
 
-To add more emojis, edit the `InitializeEmojis()` method in `MainWindow.xaml.cs`:
-
-```csharp
-new Emoji("🎉", "Party popper", "Smileys", new[] { "party", "celebration", "tada" }),
-```
+The emoji list is not hardcoded: it comes from the Unicode emoji database embedded in Emoji.Wpf (`EmojiData.AllGroups`), filtered to emoji the system font can render.
 
 ### Categories
 
-Current categories:
-- **Smileys** - Smileys & Emotion
-- **People** - People & Body  
-- **Objects** - Objects & Symbols
+The Unicode groups are mapped onto the original Windows 10 categories in `GroupToCategory` in `MainWindow.xaml.cs`:
+- 🕒 **Recent** - Most recently used (persisted)
+- 😀 **Smileys** - Smileys & Emotion + Animals & Nature
+- 👤 **People** - People & Body
+- 🎉 **Celebrations** - Activities + Objects
+- 🍕 **Food** - Food & Drink + plants
+- 🚗 **Transport** - Travel & Places
+- ♥️ **Symbols** - Symbols
+
+Flags are excluded, matching the Windows 10 picker.
 
 ## Contributing
 
@@ -182,24 +197,26 @@ dotnet build --configuration Release
 - **Formatting**: Enforced by `.editorconfig` and `dotnet format`
 - **Naming**: PascalCase for public members, camelCase for private
 - **Comments**: Australian English, clear and concise
-- **Performance**: Keep memory usage minimal (~119MB target)
+- **Performance**: Keep the resident (idle-in-tray) footprint modest
 
 ## Roadmap
 
 ### v0.2.0 (Next Release)
-- [ ] Add more emoji categories (Animals, Food, Travel, etc.)
-- [ ] Expand emoji database with more emojis  
+- [x] Add more emoji categories (Animals, Food, Travel, etc.)
+- [x] Expand emoji database with more emojis
 - [ ] Improved error handling and user feedback
 
 ### v0.3.0 (Future)
-- [ ] Global hotkey support (Win+. replacement)
-- [ ] Recently used emojis section
+- [x] Global hotkey support (Win+. replacement)
+- [x] Dark mode
+- [x] Installer/packaging for easy distribution
+- [x] Auto-start with Windows option
 - [ ] Skin tone modifiers for people emojis
+- [ ] Search by keyword/alias (currently matches emoji names)
 
 ### v1.0.0 (Stable Release)
 - [ ] Settings/preferences window
-- [ ] Auto-start with Windows option
-- [ ] Installer/packaging for easy distribution
+- [ ] Configurable hotkey
 
 ## License
 
@@ -208,7 +225,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Original Windows 10 emoji picker design by Microsoft
-- Windows 10 emoji font (seguiemj.ttf) by Microsoft
+- Colour emoji rendering by [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (Sam Hocevar)
 - Built with WPF and .NET 8.0
 
 ## Why This Project?

@@ -17,15 +17,20 @@ See Project README.md
 - **Framework**: WPF with .NET 8 (modern, performant, included with Windows 11)
 - **Language**: C# 12 with modern language features
 - **UI**: XAML with custom styling to match Windows 10 design
-- **Font**: Custom bundled Windows 10 emoji font (seguiemj.ttf)
-- **Target Platform**: Windows 11 (standalone application, no system integration initially)
+- **Emoji Rendering**: Emoji.Wpf NuGet package (colour emoji via the system Segoe UI Emoji font)
+- **Target Platform**: Windows 11 (resident system-tray app that takes over Win+.)
+- **Packaging**: Self-contained publish, packaged by Inno Setup (`installer/EmojiPicker.iss`)
 
 ## Code Architecture
-- **MainWindow.xaml.cs**: Contains `Emoji` class and all business logic
-- **Emoji Class**: Simple data structure (Character, Name, Category, Keywords[])
-- **Font Loading**: Uses pack://application URI to load embedded font
-- **Styling**: Custom WPF styles for tabs and emoji buttons
-- **Event Handling**: Click handlers for tabs, emoji selection, search functionality
+- **App.xaml.cs**: Tray host - single-instance mutex, `NotifyIcon` menu, installs the hook, applies the theme, owns the resident lifecycle (`ShutdownMode.OnExplicitShutdown`)
+- **HotkeyListener.cs**: `WH_KEYBOARD_LL` hook; on Win+. it captures the foreground window, raises an event, and swallows the key so the built-in panel is suppressed
+- **MainWindow.xaml.cs**: `Emoji`/`EmojiCategory` classes and picker logic; `ShowPicker()` positions near the cursor and force-foregrounds (AttachThreadInput); selection hides (not closes) the reused window
+- **Emoji Data**: Full Unicode set from Emoji.Wpf's `EmojiData.AllGroups`, mapped to the seven Win10 categories in `GroupToCategory`
+- **Insertion**: `TextInjector.cs` types the emoji into the previously focused window (SendInput/KEYEVENTF_UNICODE), clipboard fallback
+- **Theming**: `ThemeManager.cs` merges `Theme/Light|DarkTheme.xaml` per the Windows setting and swaps live on `SystemEvents.UserPreferenceChanged`; XAML uses `DynamicResource` brushes
+- **Recent Emojis**: Persisted to `%APPDATA%\ClassicEmojiPicker\recent.json`
+- **Keyboard**: Window-level PreviewKeyDown - arrows move selection, Enter commits, ESC dismisses; focus lives in the search box
+- **WinForms interop note**: `UseWindowsForms` is on for the tray icon, but the WinForms implicit global using is removed in the csproj to avoid clashing with WPF types; import `System.Windows.Forms` explicitly where needed
 
 ## Development Environment
 - User has: Visual Studio Enterprise, VS Code, Windows 11, GitHub account
@@ -56,6 +61,6 @@ See Project README.md
 - The GitHub repository URL is https://github.com/platima/Classic-EmojiPicker and currently private
 
 ## File Dependencies
-- **seguiemj.ttf**: Critical font file that must be placed in Fonts/ directory
+- **Segoe UI Emoji**: System font used for rendering (ships with Windows 10 1809+ / Windows 11)
 - **Visual Studio 2022**: Primary development environment (VS Code and VS 2019 may work)
 - **.NET 8 (and SDK)**: Must be installed (may need separate download)

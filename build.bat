@@ -1,5 +1,5 @@
 @echo off
-echo Building Classic Emoji Picker v0.1.0...
+echo Building Classic Emoji Picker v0.1.1...
 echo.
 
 REM Clean previous builds

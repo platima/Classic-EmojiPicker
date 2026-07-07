@@ -1,36 +1,35 @@
 # Version Information
 
-## Current Version: v0.1.0
+## Current Version: v0.1.1
 
-**Release Date**: 2025-06-21  
-**Build**: Release  
-**Target Framework**: .NET 8.0-windows  
-**Architecture**: Any CPU  
+**Release Date**: 2025-06-21 (unreleased; see CHANGELOG for later updates)
+**Build**: Release
+**Target Framework**: .NET 8.0-windows
+**Architecture**: x64 (self-contained)
 
 ### Version Details
-- **Assembly Version**: 0.1.0.0
-- **File Version**: 0.1.0.0  
-- **Product Version**: 0.1.0
-- **Informational Version**: 0.1.0
+- **Assembly Version**: 0.1.1.0
+- **File Version**: 0.1.1.0
+- **Product Version**: 0.1.1
+- **Informational Version**: 0.1.1
 
 ### Release Notes
-- First working release of Classic Emoji Picker
-- Core functionality implemented and tested
-- Windows 10-style UI with custom styling
-- Three emoji categories with search functionality
-- One-click copy to clipboard with auto-minimize
+- Resident system-tray app that takes over **Win+.** in place of the built-in Windows emoji panel
+- Full Unicode emoji set in the original seven Windows 10 categories
+- Direct insertion into the previously focused app (clipboard fallback)
+- Dark mode that follows the Windows theme
+- Per-user Inno Setup installer with optional start-with-Windows
 
 ### Compatibility
 - **OS**: Windows 11, Windows 10 (version 1809+)
-- **Runtime**: .NET 8.0 (self-contained in release builds)
-- **Memory**: ~119MB typical usage
-- **Disk**: ~50MB installed size
+- **Runtime**: Self-contained - no separate .NET install required
+- **Emoji Font**: System Segoe UI Emoji (ships with supported Windows versions)
 
 ### Known Issues
-- Limited emoji database (70 emojis total)
-- Only three categories currently available
-- No global hotkey support yet
+- Search matches emoji names only (no keyword/alias search yet)
+- No skin-tone modifiers yet
+- The Win+. hook requires the app to be running (tray)
 
 ### Next Release
 - **Target**: v0.2.0
-- **Focus**: Expanded emoji database and categories
+- **Focus**: Keyword/alias search, skin-tone modifiers, configurable hotkey

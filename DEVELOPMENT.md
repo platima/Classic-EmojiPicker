@@ -21,6 +21,14 @@
    dotnet build --configuration Release
    dotnet run --project EmojiPicker
    ```
+   The app launches into the system tray with no visible window - press **Win+.** or double-click the tray icon to open the picker. Exit via the tray menu.
+
+4. **Build the installer** (requires [Inno Setup 6](https://jrsoftware.org/isdl.php)):
+   ```powershell
+   dotnet publish EmojiPicker/EmojiPicker.csproj -c Release -r win-x64 --self-contained true -o ./publish
+   ISCC.exe /DAppVersion=0.1.1 "/DPublishDir=$(Resolve-Path ./publish)" installer/EmojiPicker.iss
+   ```
+   The release GitHub Actions workflow does this automatically for tagged builds.
 
 ### **Code Quality Workflow**
 
@@ -61,7 +69,7 @@ dotnet format --verify-no-changes
   - Interfaces: `IPascalCase`
 
 #### **Project-Specific Guidelines**
-- **Performance First:** Keep memory usage minimal (~119MB target)
+- **Performance First:** Keep the resident (idle-in-tray) footprint modest; the picker window is reused, not recreated per open
 - **No Bloat:** Resist feature creep, maintain Windows 10 simplicity
 - **Australian English:** Comments and documentation
 - **Null Safety:** Use null checks, especially for UI elements
@@ -90,22 +98,27 @@ dotnet format --verify-no-changes
 ### **Testing Strategy**
 
 #### **Manual Testing Checklist**
-- [ ] Application starts without errors
-- [ ] All three category tabs work
-- [ ] Search functionality works
-- [ ] Emoji copying works (clipboard)
-- [ ] Window minimises after emoji selection
-- [ ] ESC key closes application
-- [ ] Memory usage stays under 130MB
+- [ ] App starts to the tray with no visible window
+- [ ] **Win+.** opens the picker near the cursor and the built-in Windows panel does NOT appear
+- [ ] Search box is focused on open; typing filters immediately
+- [ ] All seven category tabs work and show populated grids
+- [ ] Arrow keys move the selection; Enter inserts the highlighted emoji into the app you came from
+- [ ] Clipboard fallback works when there is no target window
+- [ ] Picker hides after selection, on focus loss, and on ESC (process stays in the tray)
+- [ ] Recent emojis persist across restarts
+- [ ] Dark/light: switch the Windows theme and confirm the picker recolours (live)
+- [ ] Tray menu: Open, Start with Windows (toggles the HKCU Run key), Exit
+- [ ] After Exit, Win+. reopens the built-in Windows panel
+
+> Note: the Win+. hook is global while the app runs. When testing with scripted input, always terminate the process afterward so the hook is removed.
+- [ ] Idle-in-tray memory stays reasonable
 
 #### **Performance Testing**
 ```powershell
-# Monitor memory usage
+# Monitor the resident process's memory while idle in the tray
 Get-Process EmojiPicker | Select-Object Name, WorkingSet, PagedMemorySize
-
-# Startup time test (should be under 2 seconds)
-Measure-Command { Start-Process EmojiPicker.exe }
 ```
+The app starts into the tray; measure how quickly the picker appears on Win+., not process start time.
 
 ### **Release Process**
 
@@ -113,7 +126,7 @@ Measure-Command { Start-Process EmojiPicker.exe }
 1. Update version in `EmojiPicker.csproj`
 2. Update `CHANGELOG.md` with new version
 3. Update `VERSION.md` with release notes
-4. Update window title in `MainWindow.xaml`
+4. Tag `vX.Y.Z` and push - the release workflow publishes and builds the installer
 
 #### **Quality Gates**
 - [ ] All code quality checks pass
@@ -132,7 +145,7 @@ git push origin v0.x.x
 
 #### **Common Issues**
 - **Build Fails:** Check .NET 8 SDK installation
-- **Font Issues:** Ensure `seguiemj.ttf` is in `Fonts/` directory
+- **Emoji Render as Monochrome/Boxes:** Ensure the system Segoe UI Emoji font is present (bundled with Windows 10 1809+)
 - **Formatting Errors:** Run `dotnet format` to auto-fix
 - **Memory Leaks:** Check event handler disposal
 

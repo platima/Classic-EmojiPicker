@@ -1,0 +1,19 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Light theme: the original Windows 10 emoji panel appearance -->
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="WindowBorderBrush" Color="#E1E1E1"/>
+    <SolidColorBrush x:Key="TabStripBackgroundBrush" Color="#F8F8F8"/>
+    <SolidColorBrush x:Key="HeaderForegroundBrush" Color="#444444"/>
+    <SolidColorBrush x:Key="HoverBrush" Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="SearchBackgroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SearchForegroundBrush" Color="#000000"/>
+    <SolidColorBrush x:Key="SearchBorderBrush" Color="#E1E1E1"/>
+    <SolidColorBrush x:Key="WatermarkForegroundBrush" Color="#808080"/>
+    <SolidColorBrush x:Key="CloseForegroundBrush" Color="#333333"/>
+    <SolidColorBrush x:Key="ScrollBarBackgroundBrush" Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="ScrollBarThumbBrush" Color="#C1C1C1"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#0078D4"/>
+
+</ResourceDictionary>

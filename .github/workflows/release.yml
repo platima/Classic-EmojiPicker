@@ -25,16 +25,29 @@ jobs:
       
     - name: Publish Self-Contained
       run: dotnet publish EmojiPicker/EmojiPicker.csproj --configuration Release --runtime win-x64 --self-contained true --output ./publish
-      
+
     - name: Create Release Archive
       run: |
         Compress-Archive -Path ./publish/* -DestinationPath ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
-        
+
+    - name: Install Inno Setup
+      run: choco install innosetup --no-progress -y
+
+    - name: Build Installer
+      run: |
+        $version = "${{ github.ref_name }}".TrimStart('v')
+        & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+          "/DAppVersion=$version" `
+          "/DPublishDir=$(Resolve-Path ./publish)" `
+          installer/EmojiPicker.iss
+      shell: pwsh
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
           ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
+          ./installer/output/EmojiPicker-Setup-*.exe
         name: Classic Emoji Picker ${{ github.ref_name }}
         body: |
           ## Classic Emoji Picker ${{ github.ref_name }}

@@ -3,32 +3,42 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF>    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
+
     <!-- Code Analysis -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <WarningsNotAsErrors />
-    
+
     <!-- Application Info -->
     <AssemblyTitle>Windows 10 Emoji Picker</AssemblyTitle>
     <AssemblyDescription>Lightweight Windows 10 style emoji picker for Windows 11</AssemblyDescription>
     <AssemblyProduct>Classic EmojiPicker</AssemblyProduct>
-    <AssemblyCopyright>Copyright © Platima 2025</AssemblyCopyright>    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <AssemblyCopyright>Copyright © Platima 2025</AssemblyCopyright>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
     <FileVersion>0.1.1.0</FileVersion>
     <Version>0.1.1</Version>
     <InformationalVersion>0.1.1</InformationalVersion>
   </PropertyGroup>
 
+  <!-- WinForms is only used for the tray icon (App.xaml.cs imports it explicitly);
+       drop the implicit global using so its types don't clash with WPF's -->
   <ItemGroup>
-    <Resource Include="Fonts\seguiemj.ttf" />
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
+  <!-- Embed the icon so it can be loaded at runtime for the tray via pack URI,
+       in addition to being the executable's icon (ApplicationIcon above) -->
+  <ItemGroup>
+    <Resource Include="Resources\app.ico" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Syntellect.Typography.OpenFont.Net6" Version="1.0.0" />
+    <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
   </ItemGroup>
 
 </Project>
