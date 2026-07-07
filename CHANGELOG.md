@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.2] - 2026-07-08
+
+### Fixed
+- **Picker never appeared on high-DPI / multi-monitor setups** - `PositionNearCursor` fed physical-pixel coordinates into WPF's device-independent `Left`/`Top`, placing the window off-screen (e.g. dual 4K @ 150%). Coordinates are now converted with the window's DPI scale, with an `EnsureOnScreen` fallback that recentres on the primary monitor if the window would still land off every display
+
+### Added
+- **Debug logging** toggled via **Shift+right-click** on the tray icon (off by default), written to `%APPDATA%\ClassicEmojiPicker\debug.log`; fatal exceptions are always recorded. A balloon tip reports the on/off state and log path
+- Guard against the picker hiding from a transient deactivation while it is being brought to the foreground
+
+### Changed
+- Tray menu item capitalised to "Open Emoji Picker" (the app name)
+
 ## [Unreleased - v0.1.1] - 2025-06-21
 
 ### Added (2026-07-07, session 3)

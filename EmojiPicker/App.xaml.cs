@@ -39,6 +39,16 @@ namespace EmojiPicker
                 return;
             }
 
+            Logger.Initialize();
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            Logger.Log($"=== Startup v{version} ===");
+
+            // Record otherwise-silent crashes even when logging is toggled off
+            DispatcherUnhandledException += (_, args) =>
+                Logger.LogAlways($"FATAL (UI): {args.Exception}");
+            AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+                Logger.LogAlways($"FATAL: {args.ExceptionObject}");
+
             // Stay alive with no visible window until the hotkey shows the picker
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
@@ -50,6 +60,7 @@ namespace EmojiPicker
             hotkey = new HotkeyListener();
             hotkey.HotkeyPressed += OnHotkeyPressed;
             hotkey.Start();
+            Logger.Log("Keyboard hook installed");
 
             CreateTrayIcon();
         }
@@ -58,6 +69,7 @@ namespace EmojiPicker
         {
             // The hook captured the focused window at key-press time; the picker
             // inserts the chosen emoji back into it
+            Logger.Log($"Hotkey pressed; target={targetWindow}");
             PreviousForegroundWindow = targetWindow;
             picker?.ShowPicker();
         }
@@ -65,7 +77,7 @@ namespace EmojiPicker
         private void CreateTrayIcon()
         {
             var menu = new ContextMenuStrip();
-            menu.Items.Add("Open emoji picker", null, (_, _) => picker?.ShowPicker());
+            menu.Items.Add("Open Emoji Picker", null, (_, _) => picker?.ShowPicker());
             menu.Items.Add(new ToolStripSeparator());
 
             var startupItem = new ToolStripMenuItem("Start with Windows")
@@ -78,6 +90,21 @@ namespace EmojiPicker
 
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Exit", null, (_, _) => Shutdown());
+
+            // Shift+right-click toggles debug logging instead of opening the menu
+            menu.Opening += (_, args) =>
+            {
+                if ((Control.ModifierKeys & Keys.Shift) != 0)
+                {
+                    args.Cancel = true;
+                    var on = Logger.Toggle();
+                    trayIcon?.ShowBalloonTip(
+                        4000,
+                        "Classic Emoji Picker",
+                        on ? $"Debug logging ON\n{Logger.LogPath}" : "Debug logging OFF",
+                        ToolTipIcon.Info);
+                }
+            };
 
             trayIcon = new NotifyIcon
             {

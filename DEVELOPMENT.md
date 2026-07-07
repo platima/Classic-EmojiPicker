@@ -147,7 +147,10 @@ git push origin v0.x.x
 - **Build Fails:** Check .NET 8 SDK installation
 - **Emoji Render as Monochrome/Boxes:** Ensure the system Segoe UI Emoji font is present (bundled with Windows 10 1809+)
 - **Formatting Errors:** Run `dotnet format` to auto-fix
-- **Memory Leaks:** Check event handler disposal
+- **Picker doesn't appear on Win+.:** Enable debug logging (**Shift+right-click** the tray icon) and inspect `%APPDATA%\ClassicEmojiPicker\debug.log` - the `PositionNearCursor`/`ShowPicker done` lines record the computed coordinates and DPI scale
+
+#### **Debug Logging**
+Shift+right-click the tray icon to toggle a diagnostic log at `%APPDATA%\ClassicEmojiPicker\debug.log` (off by default; a balloon tip confirms the state). It records the hotkey, positioning, foreground, and insertion path; fatal exceptions are always written regardless of the toggle. See `Logger.cs`.
 
 #### **Debug Configuration**
 ```xml

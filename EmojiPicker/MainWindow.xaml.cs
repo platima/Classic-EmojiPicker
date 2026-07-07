@@ -59,6 +59,7 @@ namespace EmojiPicker
         private List<Emoji> allEmojis = new List<Emoji>();
         private List<Emoji> recentEmojis = new List<Emoji>();
         private string currentCategory = DefaultCategoryKey;
+        private bool isShowing;
 
         public MainWindow()
         {
@@ -77,6 +78,9 @@ namespace EmojiPicker
         /// </summary>
         public void ShowPicker()
         {
+            // Ignore focus-loss triggered while we are bringing the window up
+            isShowing = true;
+
             SearchBox.Clear();
             var defaultIndex = Categories.FindIndex(category => category.Key == DefaultCategoryKey);
             if (CategoryTabs.SelectedIndex == defaultIndex)
@@ -91,6 +95,7 @@ namespace EmojiPicker
             PositionNearCursor();
 
             Show();
+            EnsureOnScreen();
             Activate();
             var handle = new WindowInteropHelper(this).Handle;
             if (handle != IntPtr.Zero)
@@ -100,6 +105,12 @@ namespace EmojiPicker
 
             SearchBox.Focus();
             Keyboard.Focus(SearchBox);
+
+            Logger.Log($"ShowPicker done: Left={Left:F0} Top={Top:F0} W={Width} H={Height} " +
+                $"foreground={GetForegroundWindow()} thisHwnd={handle}");
+
+            // Clear the guard once the show/activation storm has settled
+            Dispatcher.BeginInvoke(new Action(() => isShowing = false), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -132,19 +143,53 @@ namespace EmojiPicker
                 return;
             }
 
-            // Offset so the panel sits below-right of the caret/cursor, and keep
-            // it fully on the screen that contains the cursor
+            // GetCursorPos and Screen.WorkingArea are in physical pixels, but WPF's
+            // Left/Top are in device-independent units. Convert with the window's DPI
+            // scale, or the panel lands off-screen on scaled/high-DPI displays.
+            var hwnd = new WindowInteropHelper(this).EnsureHandle();
+            double scale = GetDpiForWindow(hwnd) / 96.0;
+            if (scale <= 0)
+            {
+                scale = 1.0;
+            }
+
             var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point(cursor.X, cursor.Y));
             var area = screen.WorkingArea;
 
-            var left = cursor.X + 8;
-            var top = cursor.Y + 8;
-            left = Math.Max(area.Left, Math.Min(left, area.Right - (int)Width));
-            top = Math.Max(area.Top, Math.Min(top, area.Bottom - (int)Height));
+            // Work in physical pixels (offset below-right of the cursor, clamped to
+            // the cursor's monitor), then convert the top-left to DIPs for WPF.
+            var physicalWidth = Width * scale;
+            var physicalHeight = Height * scale;
+            double left = Math.Max(area.Left, Math.Min(cursor.X + 8, area.Right - physicalWidth));
+            double top = Math.Max(area.Top, Math.Min(cursor.Y + 8, area.Bottom - physicalHeight));
 
             WindowStartupLocation = WindowStartupLocation.Manual;
-            Left = left;
-            Top = top;
+            Left = left / scale;
+            Top = top / scale;
+
+            Logger.Log($"PositionNearCursor: cursor=({cursor.X},{cursor.Y}) scale={scale} " +
+                $"area=[{area.Left},{area.Top},{area.Right},{area.Bottom}] => DIP Left={Left:F0} Top={Top:F0}");
+        }
+
+        /// <summary>
+        /// Last line of defence against the window opening off-screen (e.g. mixed-DPI
+        /// monitors): if its bounds fall outside every display, recentre on the primary.
+        /// </summary>
+        private void EnsureOnScreen()
+        {
+            double vsLeft = SystemParameters.VirtualScreenLeft;
+            double vsTop = SystemParameters.VirtualScreenTop;
+            double vsRight = vsLeft + SystemParameters.VirtualScreenWidth;
+            double vsBottom = vsTop + SystemParameters.VirtualScreenHeight;
+
+            bool onScreen = Left < vsRight && Left + Width > vsLeft && Top < vsBottom && Top + Height > vsTop;
+            if (!onScreen)
+            {
+                var work = SystemParameters.WorkArea; // primary monitor, in DIPs
+                Left = work.Left + ((work.Width - Width) / 2);
+                Top = work.Top + ((work.Height - Height) / 2);
+                Logger.Log($"EnsureOnScreen: off-screen, recentred to Left={Left:F0} Top={Top:F0}");
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -322,6 +367,7 @@ namespace EmojiPicker
 
         private void CommitEmoji(Emoji emoji)
         {
+            Logger.Log($"CommitEmoji: '{emoji.Character}' -> target={App.PreviousForegroundWindow}");
             AddToRecentEmojis(emoji);
             DismissPicker();
 
@@ -334,6 +380,7 @@ namespace EmojiPicker
                 // like the Windows 10 panel; fall back to the clipboard otherwise
                 if (!TextInjector.TryInsert(App.PreviousForegroundWindow, emoji.Character))
                 {
+                    Logger.Log("Insert failed; falling back to clipboard");
                     try
                     {
                         Clipboard.SetText(emoji.Character);
@@ -358,7 +405,16 @@ namespace EmojiPicker
 
         private void MainWindow_Deactivated(object sender, EventArgs e)
         {
+            // Ignore the transient deactivation that can occur while we are still
+            // bringing the window to the foreground, or it would hide immediately
+            if (isShowing)
+            {
+                Logger.Log("Deactivated ignored (still showing)");
+                return;
+            }
+
             // Dismiss when focus leaves the panel, like the Windows 10 picker
+            Logger.Log("Deactivated -> dismiss");
             DismissPicker();
         }
 
@@ -449,6 +505,9 @@ namespace EmojiPicker
 
         [DllImport("user32.dll")]
         private static extern bool GetCursorPos(out POINT lpPoint);
+
+        [DllImport("user32.dll")]
+        private static extern uint GetDpiForWindow(IntPtr hWnd);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct POINT

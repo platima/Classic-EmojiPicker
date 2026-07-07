@@ -1,19 +1,21 @@
 # Version Information
 
-## Current Version: v0.1.1
+## Current Version: v0.1.2
 
-**Release Date**: 2025-06-21 (unreleased; see CHANGELOG for later updates)
+**Release Date**: 2026-07-08
 **Build**: Release
 **Target Framework**: .NET 8.0-windows
 **Architecture**: x64 (self-contained)
 
 ### Version Details
-- **Assembly Version**: 0.1.1.0
-- **File Version**: 0.1.1.0
-- **Product Version**: 0.1.1
-- **Informational Version**: 0.1.1
+- **Assembly Version**: 0.1.2.0
+- **File Version**: 0.1.2.0
+- **Product Version**: 0.1.2
+- **Informational Version**: 0.1.2
 
 ### Release Notes
+- Fixed the picker not appearing on high-DPI / multi-monitor setups (DPI-correct positioning + on-screen fallback)
+- Debug logging toggled with Shift+right-click on the tray icon
 - Resident system-tray app that takes over **Win+.** in place of the built-in Windows emoji panel
 - Full Unicode emoji set in the original seven Windows 10 categories
 - Direct insertion into the previously focused app (clipboard fallback)

@@ -49,7 +49,7 @@ This version includes core functionality and is ready for daily use:
 2. Run it (a per-user install - no administrator prompt).
 3. Tick **Start with Windows** when asked so Win+. works after every sign-in.
 
-Classic Emoji Picker then lives in the system tray. Press **Win+.** anywhere to open it. Right-click the tray icon for **Open**, a **Start with Windows** toggle, and **Exit**.
+Classic Emoji Picker then lives in the system tray. Press **Win+.** anywhere to open it. Right-click the tray icon for **Open**, a **Start with Windows** toggle, and **Exit**. **Shift+right-click** the tray icon toggles a diagnostic log at `%APPDATA%\ClassicEmojiPicker\debug.log` if you ever need to troubleshoot.
 
 > **Restoring the built-in panel:** while Classic Emoji Picker is running it intercepts Win+.. Choose **Exit** from the tray icon (and untick Start with Windows) to hand the shortcut back to Windows.
 
