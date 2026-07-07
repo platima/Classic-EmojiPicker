@@ -5,24 +5,27 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: windows-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
+    - uses: actions/checkout@v7
+
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 8.0.x
-        
+
     - name: Restore dependencies
       run: dotnet restore
-      
+
     - name: Build Release
       run: dotnet build --configuration Release --no-restore
-      
+
     - name: Publish Self-Contained
       run: dotnet publish EmojiPicker/EmojiPicker.csproj --configuration Release --runtime win-x64 --self-contained true --output ./publish
 
@@ -43,7 +46,7 @@ jobs:
       shell: pwsh
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v3
       with:
         files: |
           ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
@@ -51,12 +54,15 @@ jobs:
         name: Classic Emoji Picker ${{ github.ref_name }}
         body: |
           ## Classic Emoji Picker ${{ github.ref_name }}
-          
-          Download the ZIP file below, extract it, and run `EmojiPicker.exe`.
-          
+
+          **Recommended:** download `EmojiPicker-Setup-*.exe` and run it (per-user, no admin).
+          Tick "Start with Windows" so **Win+.** opens this picker after every sign-in.
+
+          The `.zip` is a portable, self-contained build - extract it and run `EmojiPicker.exe`.
+
           ### What's New
           See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
-          
+
           ### Requirements
           - Windows 11 or Windows 10 (version 1809+)
           - No additional dependencies required (self-contained)
