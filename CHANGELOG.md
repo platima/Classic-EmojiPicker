@@ -12,9 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Debug logging** toggled via **Shift+right-click** on the tray icon (off by default), written to `%APPDATA%\ClassicEmojiPicker\debug.log`; fatal exceptions are always recorded. A balloon tip reports the on/off state and log path
+- **Run again to open** - launching the app (or its shortcut) while it is already running now opens the picker, as a fallback if the Win+. hotkey is unavailable
 - Guard against the picker hiding from a transient deactivation while it is being brought to the foreground
 
 ### Changed
+- The picker now opens on the **Recent** tab when you have history (like the Windows 10 picker), otherwise on Smiley faces & animals
 - Tray menu item capitalised to "Open Emoji Picker" (the app name)
 
 ## [Unreleased - v0.1.1] - 2025-06-21

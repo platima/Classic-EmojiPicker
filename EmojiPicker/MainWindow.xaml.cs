@@ -82,14 +82,18 @@ namespace EmojiPicker
             isShowing = true;
 
             SearchBox.Clear();
-            var defaultIndex = Categories.FindIndex(category => category.Key == DefaultCategoryKey);
-            if (CategoryTabs.SelectedIndex == defaultIndex)
+
+            // Open on Recent when there is history (like the Windows 10 picker),
+            // otherwise the first content tab
+            var openKey = recentEmojis.Count > 0 ? RecentCategoryKey : DefaultCategoryKey;
+            var openIndex = Categories.FindIndex(category => category.Key == openKey);
+            if (CategoryTabs.SelectedIndex == openIndex)
             {
-                LoadCategory(DefaultCategoryKey); // no SelectionChanged will fire; refresh directly
+                LoadCategory(openKey); // no SelectionChanged will fire; refresh directly
             }
             else
             {
-                CategoryTabs.SelectedIndex = defaultIndex;
+                CategoryTabs.SelectedIndex = openIndex; // fires SelectionChanged -> LoadCategory
             }
 
             PositionNearCursor();
@@ -247,6 +251,7 @@ namespace EmojiPicker
                 ? recentEmojis.ToList()
                 : allEmojis.Where(emoji => emoji.Category == categoryKey).ToList();
 
+            Logger.Log($"LoadCategory '{categoryKey}' -> {categoryEmojis.Count} items");
             CategoryHeader.Text = Categories.FirstOrDefault(category => category.Key == categoryKey)?.DisplayName ?? categoryKey;
             ShowEmojis(categoryEmojis);
         }
@@ -431,6 +436,8 @@ namespace EmojiPicker
             {
                 recentEmojis.RemoveAt(recentEmojis.Count - 1);
             }
+
+            Logger.Log($"AddToRecent '{emoji.Character}' -> recents now {recentEmojis.Count}");
         }
 
         private void LoadRecentEmojis()

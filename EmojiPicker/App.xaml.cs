@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Forms;
@@ -12,6 +13,7 @@ namespace EmojiPicker
     public partial class App : Application
     {
         private const string MutexName = "ClassicEmojiPicker.SingleInstance";
+        private const string ShowEventName = "ClassicEmojiPicker.Show";
         private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string RunValueName = "ClassicEmojiPicker";
 
@@ -22,6 +24,7 @@ namespace EmojiPicker
         public static IntPtr PreviousForegroundWindow { get; set; }
 
         private Mutex? instanceMutex;
+        private EventWaitHandle? showEvent;
         private MainWindow? picker;
         private HotkeyListener? hotkey;
         private NotifyIcon? trayIcon;
@@ -34,7 +37,17 @@ namespace EmojiPicker
             instanceMutex = new Mutex(true, MutexName, out var isNew);
             if (!isNew)
             {
-                // Another instance is already running; nothing to do here
+                // Already running: ask that instance to open the picker (so running
+                // the shortcut again behaves like a launcher), then exit
+                try
+                {
+                    EventWaitHandle.OpenExisting(ShowEventName).Set();
+                }
+                catch (Exception)
+                {
+                    // The primary may be mid-startup or shutting down; nothing to do
+                }
+
                 Shutdown();
                 return;
             }
@@ -62,6 +75,11 @@ namespace EmojiPicker
             hotkey.Start();
             Logger.Log("Keyboard hook installed");
 
+            // Let a second launch (e.g. running the shortcut again) open the picker
+            showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+            var showThread = new Thread(ShowEventLoop) { IsBackground = true };
+            showThread.Start();
+
             CreateTrayIcon();
         }
 
@@ -73,6 +91,23 @@ namespace EmojiPicker
             PreviousForegroundWindow = targetWindow;
             picker?.ShowPicker();
         }
+
+        private void ShowEventLoop()
+        {
+            while (showEvent != null && showEvent.WaitOne())
+            {
+                var target = GetForegroundWindow();
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    Logger.Log("Show requested (run-again)");
+                    PreviousForegroundWindow = target;
+                    picker?.ShowPicker();
+                }));
+            }
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
 
         private void CreateTrayIcon()
         {
@@ -183,6 +218,7 @@ namespace EmojiPicker
         {
             hotkey?.Dispose();
             ThemeManager.Shutdown();
+            showEvent?.Dispose();
 
             if (trayIcon != null)
             {
