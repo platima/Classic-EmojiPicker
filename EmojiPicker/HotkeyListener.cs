@@ -26,10 +26,11 @@ namespace EmojiPicker
         private IntPtr hookHandle;
 
         /// <summary>
-        /// Raised on the UI thread when Win+. is pressed. The argument is the
-        /// window that was focused at key-press time (the insertion target).
+        /// Raised on the UI thread when Win+. is pressed. Arguments are the
+        /// foreground window and the focused child control at key-press time
+        /// (the insertion target).
         /// </summary>
-        public event Action<IntPtr>? HotkeyPressed;
+        public event Action<IntPtr, IntPtr>? HotkeyPressed;
 
         public HotkeyListener()
         {
@@ -58,13 +59,14 @@ namespace EmojiPicker
                     var vkCode = Marshal.ReadInt32(lParam);
                     if (vkCode == VkOemPeriod && IsWinDown())
                     {
-                        // Capture the target window now, before showing our own
-                        // window steals focus
+                        // Capture the target window and its focused control now,
+                        // before showing our own window steals focus
                         var target = GetForegroundWindow();
+                        var focus = TextInjector.GetFocusedControl(target);
 
                         // Marshal to the UI thread; showing a window from inside
                         // the hook callback would block the input queue
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() => HotkeyPressed?.Invoke(target)));
+                        Application.Current?.Dispatcher.BeginInvoke(new Action(() => HotkeyPressed?.Invoke(target, focus)));
 
                         // Return non-zero to swallow the key so neither the '.'
                         // nor the built-in emoji panel reaches the foreground app

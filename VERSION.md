@@ -1,19 +1,21 @@
 # Version Information
 
-## Current Version: v0.1.2
+## Current Version: v0.1.3
 
-**Release Date**: 2026-07-08
+**Release Date**: 2026-07-09
 **Build**: Release
 **Target Framework**: .NET 8.0-windows
 **Architecture**: x64 (self-contained)
 
 ### Version Details
-- **Assembly Version**: 0.1.2.0
-- **File Version**: 0.1.2.0
-- **Product Version**: 0.1.2
-- **Informational Version**: 0.1.2
+- **Assembly Version**: 0.1.3.0
+- **File Version**: 0.1.3.0
+- **Product Version**: 0.1.3
+- **Informational Version**: 0.1.3
 
 ### Release Notes
+- Faster typing and opening via a UI-virtualized emoji grid (+ startup pre-warm)
+- Inserts into the previously focused control (e.g. Explorer Search/address bar) by restoring focus
 - Fixed the picker not appearing on high-DPI / multi-monitor setups (DPI-correct positioning + on-screen fallback)
 - Debug logging toggled with Shift+right-click on the tray icon
 - Resident system-tray app that takes over **Win+.** in place of the built-in Windows emoji panel

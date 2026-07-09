@@ -18,10 +18,16 @@ namespace EmojiPicker
         private const string RunValueName = "ClassicEmojiPicker";
 
         /// <summary>
-        /// The window that was focused when the hotkey fired; selected emoji are
-        /// inserted into it. Set by the hotkey hook before the picker is shown.
+        /// The foreground window when the hotkey fired; selected emoji are inserted
+        /// into it. Set by the hotkey hook before the picker is shown.
         /// </summary>
         public static IntPtr PreviousForegroundWindow { get; set; }
+
+        /// <summary>
+        /// The child control that had keyboard focus when the hotkey fired (e.g.
+        /// Explorer's Search or address edit); focus is restored to it on insert.
+        /// </summary>
+        public static IntPtr PreviousFocusWindow { get; set; }
 
         private Mutex? instanceMutex;
         private EventWaitHandle? showEvent;
@@ -69,6 +75,7 @@ namespace EmojiPicker
             ThemeManager.Initialize();
 
             picker = new MainWindow();
+            picker.PreWarm(); // warm the render path so the first hotkey open is fast
 
             hotkey = new HotkeyListener();
             hotkey.HotkeyPressed += OnHotkeyPressed;
@@ -83,12 +90,13 @@ namespace EmojiPicker
             CreateTrayIcon();
         }
 
-        private void OnHotkeyPressed(IntPtr targetWindow)
+        private void OnHotkeyPressed(IntPtr targetWindow, IntPtr focusWindow)
         {
-            // The hook captured the focused window at key-press time; the picker
-            // inserts the chosen emoji back into it
-            Logger.Log($"Hotkey pressed; target={targetWindow}");
+            // The hook captured the foreground window and focused control at
+            // key-press time; the picker inserts the chosen emoji back into it
+            Logger.Log($"Hotkey pressed; target={targetWindow} focus={focusWindow}");
             PreviousForegroundWindow = targetWindow;
+            PreviousFocusWindow = focusWindow;
             picker?.ShowPicker();
         }
 
@@ -97,10 +105,12 @@ namespace EmojiPicker
             while (showEvent != null && showEvent.WaitOne())
             {
                 var target = GetForegroundWindow();
+                var focus = TextInjector.GetFocusedControl(target);
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     Logger.Log("Show requested (run-again)");
                     PreviousForegroundWindow = target;
+                    PreviousFocusWindow = focus;
                     picker?.ShowPicker();
                 }));
             }

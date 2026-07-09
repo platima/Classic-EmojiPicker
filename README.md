@@ -226,6 +226,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Original Windows 10 emoji picker design by Microsoft
 - Colour emoji rendering by [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (Sam Hocevar)
+- Grid virtualization by [VirtualizingWrapPanel](https://github.com/sbaeumlisberger/VirtualizingWrapPanel) (S. Bäumlisberger)
 - Built with WPF and .NET 8.0
 
 ## Why This Project?

@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Threading;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using WpfEmojiData = Emoji.Wpf.EmojiData;
 
@@ -20,8 +21,13 @@ namespace EmojiPicker
         private const string RecentCategoryKey = "Recent";
         private const string SearchHeader = "Search results";
 
-        // Must match the UniformGrid Columns value in MainWindow.xaml
-        private const int GridColumns = 8;
+        // Emoji cell footprint in DIPs (40x40 border + 1px margin each side);
+        // used to derive the grid's current column count for keyboard nav
+        private const double ItemCellWidth = 42.0;
+
+        // How long to wait after the last keystroke before filtering, so typing
+        // stays smooth instead of re-rendering the grid on every character
+        private static readonly TimeSpan SearchDebounce = TimeSpan.FromMilliseconds(120);
 
         private static readonly string RecentEmojisFile = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -56,6 +62,7 @@ namespace EmojiPicker
 
         private const string DefaultCategoryKey = "Smileys";
 
+        private readonly DispatcherTimer searchTimer;
         private List<Emoji> allEmojis = new List<Emoji>();
         private List<Emoji> recentEmojis = new List<Emoji>();
         private string currentCategory = DefaultCategoryKey;
@@ -67,8 +74,73 @@ namespace EmojiPicker
             InitializeEmojis();
             LoadRecentEmojis();
 
+            searchTimer = new DispatcherTimer { Interval = SearchDebounce };
+            searchTimer.Tick += (_, _) => RunSearch();
+
             CategoryTabs.ItemsSource = Categories;
             CategoryTabs.SelectedIndex = Categories.FindIndex(category => category.Key == currentCategory);
+        }
+
+        // Columns currently shown by the virtualizing wrap panel, derived from the
+        // realized top row so Up/Down move exactly one visual row regardless of
+        // width, DPI, or scrollbar. Falls back to a width estimate before layout.
+        private int ColumnsPerRow
+        {
+            get
+            {
+                if (EmojiGrid.Items.Count == 0)
+                {
+                    return 1;
+                }
+
+                if (EmojiGrid.ItemContainerGenerator.ContainerFromIndex(0) is not UIElement first)
+                {
+                    return Math.Max(1, (int)(EmojiGrid.ActualWidth / ItemCellWidth));
+                }
+
+                var topY = first.TranslatePoint(new System.Windows.Point(0, 0), EmojiGrid).Y;
+                var columns = 0;
+                for (var i = 0; i < EmojiGrid.Items.Count; i++)
+                {
+                    // The top row is always realized; stop once we leave it (or hit
+                    // a virtualized item further down)
+                    if (EmojiGrid.ItemContainerGenerator.ContainerFromIndex(i) is not UIElement cell)
+                    {
+                        break;
+                    }
+
+                    if (Math.Abs(cell.TranslatePoint(new System.Windows.Point(0, 0), EmojiGrid).Y - topY) > 1)
+                    {
+                        break;
+                    }
+
+                    columns++;
+                }
+
+                return Math.Max(1, columns);
+            }
+        }
+
+        /// <summary>
+        /// Renders the window once off-screen at startup so the WPF visual tree and
+        /// Emoji.Wpf glyph path are JIT-warmed; the first real hotkey open is then
+        /// as fast as subsequent ones instead of paying a cold-start cost.
+        /// </summary>
+        public void PreWarm()
+        {
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Left = -32000;
+            Top = -32000;
+            ShowActivated = false;
+            Show();
+
+            Dispatcher.BeginInvoke(
+                new Action(() =>
+                {
+                    Hide();
+                    ShowActivated = true;
+                }),
+                DispatcherPriority.Loaded);
         }
 
         /// <summary>
@@ -79,6 +151,7 @@ namespace EmojiPicker
         public void ShowPicker()
         {
             // Ignore focus-loss triggered while we are bringing the window up
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             isShowing = true;
 
             SearchBox.Clear();
@@ -110,8 +183,8 @@ namespace EmojiPicker
             SearchBox.Focus();
             Keyboard.Focus(SearchBox);
 
-            Logger.Log($"ShowPicker done: Left={Left:F0} Top={Top:F0} W={Width} H={Height} " +
-                $"foreground={GetForegroundWindow()} thisHwnd={handle}");
+            Logger.Log($"ShowPicker done in {stopwatch.ElapsedMilliseconds}ms: Left={Left:F0} Top={Top:F0} " +
+                $"W={Width} H={Height} foreground={GetForegroundWindow()} thisHwnd={handle}");
 
             // Clear the guard once the show/activation storm has settled
             Dispatcher.BeginInvoke(new Action(() => isShowing = false), System.Windows.Threading.DispatcherPriority.Background);
@@ -264,6 +337,26 @@ namespace EmojiPicker
             {
                 EmojiGrid.ScrollIntoView(EmojiGrid.SelectedItem);
             }
+
+            if (Logger.Enabled)
+            {
+                // Confirm virtualization: realized containers should stay ~visible-only
+                Dispatcher.BeginInvoke(
+                    new Action(() =>
+                    {
+                        var realized = 0;
+                        for (var i = 0; i < EmojiGrid.Items.Count; i++)
+                        {
+                            if (EmojiGrid.ItemContainerGenerator.ContainerFromIndex(i) != null)
+                            {
+                                realized++;
+                            }
+                        }
+
+                        Logger.Log($"Grid realized {realized}/{EmojiGrid.Items.Count} containers");
+                    }),
+                    DispatcherPriority.Loaded);
+            }
         }
 
         private void CategoryTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -292,18 +385,28 @@ namespace EmojiPicker
                 return; // UI not ready yet
             }
 
+            searchTimer.Stop();
             if (string.IsNullOrWhiteSpace(SearchBox.Text))
             {
+                // Clearing the box should restore the category instantly
                 LoadCategory(currentCategory);
             }
             else
             {
-                SearchEmojis(SearchBox.Text);
+                // Debounce: filter once typing pauses, not on every keystroke
+                searchTimer.Start();
             }
         }
 
-        private void SearchEmojis(string searchText)
+        private void RunSearch()
         {
+            searchTimer.Stop();
+            if (EmojiGrid == null || string.IsNullOrWhiteSpace(SearchBox.Text))
+            {
+                return;
+            }
+
+            var searchText = SearchBox.Text;
             var filteredEmojis = allEmojis
                 .Where(emoji => emoji.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -319,6 +422,12 @@ namespace EmojiPicker
             switch (e.Key)
             {
                 case Key.Enter:
+                    // Apply any pending debounced search so the selection is current
+                    if (searchTimer.IsEnabled)
+                    {
+                        RunSearch();
+                    }
+
                     CommitSelectedEmoji();
                     e.Handled = true;
                     break;
@@ -331,11 +440,11 @@ namespace EmojiPicker
                     e.Handled = true;
                     break;
                 case Key.Up:
-                    MoveSelection(-GridColumns);
+                    MoveSelection(-ColumnsPerRow);
                     e.Handled = true;
                     break;
                 case Key.Down:
-                    MoveSelection(GridColumns);
+                    MoveSelection(ColumnsPerRow);
                     e.Handled = true;
                     break;
             }
@@ -383,7 +492,7 @@ namespace EmojiPicker
             {
                 // Insert into the app that was focused before the picker opened,
                 // like the Windows 10 panel; fall back to the clipboard otherwise
-                if (!TextInjector.TryInsert(App.PreviousForegroundWindow, emoji.Character))
+                if (!TextInjector.TryInsert(App.PreviousForegroundWindow, App.PreviousFocusWindow, emoji.Character))
                 {
                     Logger.Log("Insert failed; falling back to clipboard");
                     try

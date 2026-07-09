@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.3] - 2026-07-09
+
+### Fixed
+- **Laggy typing and slow opens** - the emoji grid now uses a UI-virtualized `VirtualizingWrapPanel`, so only the visible cells (~65) render instead of the whole category (up to ~310). Steady-state open dropped to ~40 ms; a startup pre-warm makes the first hotkey open fast too
+- **Inserting into controls that lose focus** - the focused child control (e.g. File Explorer's Search box or address bar) is now captured at hotkey time and focus is restored to it before typing, so the emoji lands in the right place (best-effort; some shell/UIA surfaces may still resist)
+
+### Changed
+- Search is debounced (~120 ms) so filtering runs once typing pauses instead of on every keystroke
+- Arrow-key Up/Down now derive the grid's column count at runtime (robust across width/DPI/scrollbar) instead of assuming a fixed 8
+
 ## [v0.1.2] - 2026-07-08
 
 ### Fixed
