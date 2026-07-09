@@ -363,6 +363,7 @@ namespace EmojiPicker
         {
             if (CategoryTabs.SelectedItem is EmojiCategory category)
             {
+                Logger.Log($"TabSelectionChanged -> {category.Key}");
                 currentCategory = category.Key;
                 if (string.IsNullOrEmpty(SearchBox.Text))
                 {
@@ -431,6 +432,12 @@ namespace EmojiPicker
                     CommitSelectedEmoji();
                     e.Handled = true;
                     break;
+                case Key.Tab:
+                    // Cycle categories from the keyboard (the tab strip isn't
+                    // reliably clickable when the picker isn't the active window)
+                    SwitchCategory((Keyboard.Modifiers & ModifierKeys.Shift) != 0 ? -1 : 1);
+                    e.Handled = true;
+                    break;
                 case Key.Left:
                     MoveSelection(-1);
                     e.Handled = true;
@@ -448,6 +455,19 @@ namespace EmojiPicker
                     e.Handled = true;
                     break;
             }
+        }
+
+        private void SwitchCategory(int direction)
+        {
+            var count = Categories.Count;
+            if (count == 0)
+            {
+                return;
+            }
+
+            // Wrap around; SelectionChanged loads the category and refocuses search
+            var next = (((CategoryTabs.SelectedIndex + direction) % count) + count) % count;
+            CategoryTabs.SelectedIndex = next;
         }
 
         private void MoveSelection(int delta)
@@ -476,6 +496,21 @@ namespace EmojiPicker
             {
                 e.Handled = true;
                 CommitEmoji(emoji);
+            }
+        }
+
+        private void TabItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            // Select the category on mouse-up (like emoji commit), which lands even
+            // when the picker only has attached-input focus rather than full activation
+            if (sender is ListBoxItem { DataContext: EmojiCategory category })
+            {
+                e.Handled = true;
+                var index = Categories.FindIndex(item => item.Key == category.Key);
+                if (index >= 0)
+                {
+                    CategoryTabs.SelectedIndex = index;
+                }
             }
         }
 

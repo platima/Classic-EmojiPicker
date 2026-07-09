@@ -52,6 +52,7 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <EventSetter Event="PreviewMouseLeftButtonUp" Handler="TabItem_MouseLeftButtonUp"/>
         </Style>
 
         <!-- Emoji cell in the grid -->

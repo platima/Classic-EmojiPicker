@@ -31,7 +31,7 @@ This version includes core functionality and is ready for daily use:
 - **Dark Mode** - Follows the system theme automatically and switches live when you change it
 - **Recent Emojis** - Recently used emojis are remembered between sessions
 - **Real-time Search** - Just start typing to filter emojis by name
-- **Keyboard Navigation** - Arrow keys move the highlighted emoji, Enter inserts it, ESC closes
+- **Keyboard Navigation** - Arrow keys move the highlighted emoji, Tab/Shift+Tab switch category, Enter inserts, ESC closes
 - **Lightweight** - No unnecessary features, GIFs, or bloat
 - **True Colour Emoji** - Rendered with [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) using the system Segoe UI Emoji font
 
@@ -74,7 +74,7 @@ Classic Emoji Picker then lives in the system tray. Press **Win+.** anywhere to 
 
 1. In any app, press **Win+.** (or double-click the tray icon) to open the picker where your cursor is
 2. **Type** to search - the search box is focused from the start
-3. **Browse** categories using the tabs at the bottom, or move the highlight with the arrow keys
+3. **Browse** categories with **Tab / Shift+Tab** (or click the tabs at the bottom); move the highlight with the arrow keys
 4. **Press Enter** (or click an emoji) to insert it into the app you were using
 5. If there is no target window, the emoji is copied to the clipboard instead
 
