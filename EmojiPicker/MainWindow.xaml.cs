@@ -437,12 +437,28 @@ namespace EmojiPicker
             }
 
             var searchText = SearchBox.Text;
-            var filteredEmojis = allEmojis
-                .Where(emoji => emoji.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-                    || emoji.Keywords.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                .ToList();
 
-            Logger.Log($"Search '{searchText}' -> {filteredEmojis.Count} matches");
+            // Rank name matches ahead of keyword-only matches so an incidental tag
+            // (e.g. heart decoration's "white" tag for "whi") never outranks the
+            // emoji whose name actually contains the query
+            var nameMatches = new List<Emoji>();
+            var keywordMatches = new List<Emoji>();
+            foreach (var emoji in allEmojis)
+            {
+                if (emoji.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                {
+                    nameMatches.Add(emoji);
+                }
+                else if (emoji.Keywords.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                {
+                    keywordMatches.Add(emoji);
+                }
+            }
+
+            var filteredEmojis = nameMatches;
+            filteredEmojis.AddRange(keywordMatches);
+
+            Logger.Log($"Search '{searchText}' -> {nameMatches.Count} name + {keywordMatches.Count} keyword");
             CategoryHeader.Text = SearchHeader;
             ShowEmojis(filteredEmojis);
         }
