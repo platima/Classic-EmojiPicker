@@ -53,7 +53,7 @@ namespace EmojiPicker
         {
             new EmojiCategory(RecentCategoryKey, "🕒", "Most recently used"),
             new EmojiCategory("Smileys", "😀", "Smiley faces and animals"),
-            new EmojiCategory("People", "👤", "People"),
+            new EmojiCategory("People", "🧑", "People"),
             new EmojiCategory("Celebrations", "🎉", "Celebrations and objects"),
             new EmojiCategory("Food", "🍕", "Food and plants"),
             new EmojiCategory("Transport", "🚗", "Transportation and places"),
@@ -289,6 +289,7 @@ namespace EmojiPicker
         {
             // Build the full emoji set from the Unicode database that ships
             // inside Emoji.Wpf, mapped onto the Windows 10 categories
+            var keywords = LoadKeywords();
             allEmojis = new List<Emoji>();
             foreach (var group in WpfEmojiData.AllGroups)
             {
@@ -306,11 +307,39 @@ namespace EmojiPicker
                     {
                         if (emoji.Renderable)
                         {
-                            allEmojis.Add(new Emoji(emoji.Text, emoji.Name, key));
+                            keywords.TryGetValue(NormalizeEmoji(emoji.Text), out var tags);
+                            allEmojis.Add(new Emoji(emoji.Text, emoji.Name, key, tags ?? string.Empty));
                         }
                     }
                 }
             }
+        }
+
+        // Emoji.Wpf and the keyword data can differ on the FE0F variation selector;
+        // strip it so lookups line up
+        private static string NormalizeEmoji(string text) => text.Replace("️", string.Empty);
+
+        private static Dictionary<string, string> LoadKeywords()
+        {
+            try
+            {
+                var uri = new Uri("pack://application:,,,/Resources/keywords.json");
+                using var stream = Application.GetResourceStream(uri)?.Stream;
+                if (stream != null)
+                {
+                    var map = JsonSerializer.Deserialize<Dictionary<string, string>>(stream);
+                    if (map != null)
+                    {
+                        return map;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Search still works on names if the keyword data can't be loaded
+            }
+
+            return new Dictionary<string, string>();
         }
 
         private void LoadCategory(string categoryKey)
@@ -409,9 +438,11 @@ namespace EmojiPicker
 
             var searchText = SearchBox.Text;
             var filteredEmojis = allEmojis
-                .Where(emoji => emoji.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                .Where(emoji => emoji.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                    || emoji.Keywords.Contains(searchText, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
+            Logger.Log($"Search '{searchText}' -> {filteredEmojis.Count} matches");
             CategoryHeader.Text = SearchHeader;
             ShowEmojis(filteredEmojis);
         }
@@ -674,11 +705,15 @@ namespace EmojiPicker
         public string Name { get; }
         public string Category { get; }
 
-        public Emoji(string character, string name, string category)
+        /// <summary>Extra search terms (emojibase tags), e.g. "splash" for 💦.</summary>
+        public string Keywords { get; }
+
+        public Emoji(string character, string name, string category, string keywords)
         {
             Character = character;
             Name = name;
             Category = category;
+            Keywords = keywords;
         }
     }
 

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Laggy typing and slow opens** - the emoji grid now uses a UI-virtualized `VirtualizingWrapPanel`, so only the visible cells (~65) render instead of the whole category (up to ~310). Steady-state open dropped to ~40 ms; a startup pre-warm makes the first hotkey open fast too
 - **Inserting into controls that lose focus** - the focused child control (e.g. File Explorer's Search box or address bar) is now captured at hotkey time and focus is restored to it before typing, so the emoji lands in the right place (best-effort; some shell/UIA surfaces may still resist)
 - **Couldn't switch category tabs** - the tabs required a mouse click, which didn't land reliably because the picker holds keyboard focus without always being the active window. **Tab / Shift+Tab** now cycle categories from the keyboard, and tabs also respond on mouse-up (like emoji selection) so clicking is more reliable
+- **Search missed many emoji** - search now also matches keyword tags (e.g. "splash" finds 💦, "rofl" finds 🤣), not just the Unicode name. Keyword data is bundled from [emojibase](https://github.com/milesj/emojibase)
+- **People tab icon** looked small and black (it was the monochrome 👤 silhouette); it's now a colourful person 🧑
 
 ### Changed
 - Search is debounced (~120 ms) so filtering runs once typing pauses instead of on every keystroke

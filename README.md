@@ -30,7 +30,7 @@ This version includes core functionality and is ready for daily use:
 - **Direct Insertion** - Picking an emoji types it into the previously focused window; falls back to copying to the clipboard when no target exists
 - **Dark Mode** - Follows the system theme automatically and switches live when you change it
 - **Recent Emojis** - Recently used emojis are remembered between sessions
-- **Real-time Search** - Just start typing to filter emojis by name
+- **Real-time Search** - Just start typing to filter emojis by name or keyword (e.g. "splash" finds 💦)
 - **Keyboard Navigation** - Arrow keys move the highlighted emoji, Tab/Shift+Tab switch category, Enter inserts, ESC closes
 - **Lightweight** - No unnecessary features, GIFs, or bloat
 - **True Colour Emoji** - Rendered with [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) using the system Segoe UI Emoji font
@@ -212,7 +212,7 @@ dotnet build --configuration Release
 - [x] Installer/packaging for easy distribution
 - [x] Auto-start with Windows option
 - [ ] Skin tone modifiers for people emojis
-- [ ] Search by keyword/alias (currently matches emoji names)
+- [x] Search by keyword/alias (matches emoji names and keyword tags)
 
 ### v1.0.0 (Stable Release)
 - [ ] Settings/preferences window
@@ -227,6 +227,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Original Windows 10 emoji picker design by Microsoft
 - Colour emoji rendering by [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (Sam Hocevar)
 - Grid virtualization by [VirtualizingWrapPanel](https://github.com/sbaeumlisberger/VirtualizingWrapPanel) (S. Bäumlisberger)
+- Search keyword data from [emojibase](https://github.com/milesj/emojibase) (MIT), derived from Unicode CLDR
 - Built with WPF and .NET 8.0
 
 ## Why This Project?

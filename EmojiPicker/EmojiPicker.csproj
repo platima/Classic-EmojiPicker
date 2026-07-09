@@ -35,6 +35,9 @@
        in addition to being the executable's icon (ApplicationIcon above) -->
   <ItemGroup>
     <Resource Include="Resources\app.ico" />
+    <!-- Emoji search keywords/tags keyed by emoji; generated from emojibase
+         (MIT), whose annotations derive from Unicode CLDR -->
+    <Resource Include="Resources\keywords.json" />
   </ItemGroup>
 
   <ItemGroup>
