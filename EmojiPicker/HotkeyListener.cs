@@ -27,10 +27,11 @@ namespace EmojiPicker
 
         /// <summary>
         /// Raised on the UI thread when Win+. is pressed. Arguments are the
-        /// foreground window and the focused child control at key-press time
-        /// (the insertion target).
+        /// foreground window, the focused child control at key-press time
+        /// (the insertion target), and the text caret's screen rectangle when
+        /// the target app exposes one (the picker anchors to it).
         /// </summary>
-        public event Action<IntPtr, IntPtr>? HotkeyPressed;
+        public event Action<IntPtr, IntPtr, System.Drawing.Rectangle?>? HotkeyPressed;
 
         public HotkeyListener()
         {
@@ -59,14 +60,16 @@ namespace EmojiPicker
                     var vkCode = Marshal.ReadInt32(lParam);
                     if (vkCode == VkOemPeriod && IsWinDown())
                     {
-                        // Capture the target window and its focused control now,
-                        // before showing our own window steals focus
+                        // Capture the target window, its focused control, and the
+                        // text caret now, before showing our own window steals focus
                         var target = GetForegroundWindow();
                         var focus = TextInjector.GetFocusedControl(target);
+                        System.Drawing.Rectangle? caret =
+                            TextInjector.TryGetCaretRect(target, out var caretRect) ? caretRect : null;
 
                         // Marshal to the UI thread; showing a window from inside
                         // the hook callback would block the input queue
-                        Application.Current?.Dispatcher.BeginInvoke(new Action(() => HotkeyPressed?.Invoke(target, focus)));
+                        Application.Current?.Dispatcher.BeginInvoke(new Action(() => HotkeyPressed?.Invoke(target, focus, caret)));
 
                         // Return non-zero to swallow the key so neither the '.'
                         // nor the built-in emoji panel reaches the foreground app

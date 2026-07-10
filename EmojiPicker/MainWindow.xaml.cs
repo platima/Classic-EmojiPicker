@@ -214,13 +214,33 @@ namespace EmojiPicker
 
         private void PositionNearCursor()
         {
-            if (!GetCursorPos(out var cursor))
+            // Anchor at the target app's text caret when it exposed one at hotkey
+            // time (like the Windows 10 panel); otherwise at the mouse pointer.
+            // The anchor is a small rectangle: the picker opens below its bottom
+            // edge, or above its top edge when there's no room below.
+            int anchorX, anchorTop, anchorBottom;
+            string anchor;
+            if (App.PreviousCaretRect is System.Drawing.Rectangle caret)
+            {
+                anchorX = caret.Left;
+                anchorTop = caret.Top;
+                anchorBottom = caret.Bottom;
+                anchor = "caret";
+            }
+            else if (GetCursorPos(out var cursor))
+            {
+                anchorX = cursor.X;
+                anchorTop = cursor.Y;
+                anchorBottom = cursor.Y;
+                anchor = "mouse";
+            }
+            else
             {
                 WindowStartupLocation = WindowStartupLocation.CenterScreen;
                 return;
             }
 
-            // GetCursorPos and Screen.WorkingArea are in physical pixels, but WPF's
+            // The anchor and Screen.WorkingArea are in physical pixels, but WPF's
             // Left/Top are in device-independent units. Convert with the window's DPI
             // scale, or the panel lands off-screen on scaled/high-DPI displays.
             var hwnd = new WindowInteropHelper(this).EnsureHandle();
@@ -230,21 +250,44 @@ namespace EmojiPicker
                 scale = 1.0;
             }
 
-            var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point(cursor.X, cursor.Y));
+            var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point(anchorX, anchorBottom));
             var area = screen.WorkingArea;
 
-            // Work in physical pixels (offset below-right of the cursor, clamped to
-            // the cursor's monitor), then convert the top-left to DIPs for WPF.
+            // Work in physical pixels, then convert the top-left to DIPs for WPF.
             var physicalWidth = Width * scale;
             var physicalHeight = Height * scale;
-            double left = Math.Max(area.Left, Math.Min(cursor.X + 8, area.Right - physicalWidth));
-            double top = Math.Max(area.Top, Math.Min(cursor.Y + 8, area.Bottom - physicalHeight));
+            const int gap = 8;
+
+            // Horizontal: align the picker's left edge with the anchor, clamped
+            // within the anchor's monitor.
+            double left = Math.Max(area.Left, Math.Min(anchorX + gap, area.Right - physicalWidth));
+
+            // Vertical: prefer below the anchor; if it won't fit (e.g. the caret is
+            // near the bottom of the screen), open *above* it like the Windows 10
+            // picker; otherwise clamp within the monitor.
+            double top;
+            string vplace;
+            if (anchorBottom + gap + physicalHeight <= area.Bottom)
+            {
+                top = anchorBottom + gap;
+                vplace = "below";
+            }
+            else if (anchorTop - gap - physicalHeight >= area.Top)
+            {
+                top = anchorTop - gap - physicalHeight;
+                vplace = "above";
+            }
+            else
+            {
+                top = Math.Max(area.Top, Math.Min(anchorBottom + gap, area.Bottom - physicalHeight));
+                vplace = "clamped";
+            }
 
             WindowStartupLocation = WindowStartupLocation.Manual;
             Left = left / scale;
             Top = top / scale;
 
-            Logger.Log($"PositionNearCursor: cursor=({cursor.X},{cursor.Y}) scale={scale} " +
+            Logger.Log($"PositionNearCursor: anchor={anchor}({anchorX},{anchorTop}-{anchorBottom}) scale={scale} vplace={vplace} " +
                 $"area=[{area.Left},{area.Top},{area.Right},{area.Bottom}] => DIP Left={Left:F0} Top={Top:F0}");
         }
 

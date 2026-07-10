@@ -6,8 +6,8 @@ namespace EmojiPicker
     /// <summary>
     /// Lightweight opt-in file logger for diagnosing runtime issues (the picker
     /// not appearing, hotkey/foreground problems, etc.). Logging is off by default
-    /// and toggled via Shift+right-click on the tray icon; the state persists
-    /// between runs through a marker file. Fatal exceptions are always recorded.
+    /// and toggled via the tray icon's "Debug logging" menu item; the state
+    /// persists between runs through a marker file. Fatal exceptions are always recorded.
     /// </summary>
     internal static class Logger
     {

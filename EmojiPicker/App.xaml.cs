@@ -29,6 +29,13 @@ namespace EmojiPicker
         /// </summary>
         public static IntPtr PreviousFocusWindow { get; set; }
 
+        /// <summary>
+        /// Screen rectangle of the target app's text caret at hotkey time, when it
+        /// exposed one; the picker anchors to it (like the Windows 10 panel) instead
+        /// of the mouse pointer. Null when unknown - the picker falls back to the mouse.
+        /// </summary>
+        public static System.Drawing.Rectangle? PreviousCaretRect { get; set; }
+
         private Mutex? instanceMutex;
         private EventWaitHandle? showEvent;
         private MainWindow? picker;
@@ -90,13 +97,14 @@ namespace EmojiPicker
             CreateTrayIcon();
         }
 
-        private void OnHotkeyPressed(IntPtr targetWindow, IntPtr focusWindow)
+        private void OnHotkeyPressed(IntPtr targetWindow, IntPtr focusWindow, System.Drawing.Rectangle? caretRect)
         {
-            // The hook captured the foreground window and focused control at
+            // The hook captured the foreground window, focused control, and caret at
             // key-press time; the picker inserts the chosen emoji back into it
-            Logger.Log($"Hotkey pressed; target={targetWindow} focus={focusWindow}");
+            Logger.Log($"Hotkey pressed; target={targetWindow} focus={focusWindow} caret={(caretRect.HasValue ? caretRect.Value.ToString() : "none")}");
             PreviousForegroundWindow = targetWindow;
             PreviousFocusWindow = focusWindow;
+            PreviousCaretRect = caretRect;
             picker?.ShowPicker();
         }
 
@@ -106,11 +114,14 @@ namespace EmojiPicker
             {
                 var target = GetForegroundWindow();
                 var focus = TextInjector.GetFocusedControl(target);
+                System.Drawing.Rectangle? caret =
+                    TextInjector.TryGetCaretRect(target, out var caretRect) ? caretRect : null;
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     Logger.Log("Show requested (run-again)");
                     PreviousForegroundWindow = target;
                     PreviousFocusWindow = focus;
+                    PreviousCaretRect = caret;
                     picker?.ShowPicker();
                 }));
             }
@@ -122,7 +133,7 @@ namespace EmojiPicker
         private void CreateTrayIcon()
         {
             var menu = new ContextMenuStrip();
-            menu.Items.Add("Open Emoji Picker", null, (_, _) => picker?.ShowPicker());
+            menu.Items.Add("Open Emoji Picker", null, (_, _) => ShowPickerFromTray());
             menu.Items.Add(new ToolStripSeparator());
 
             var startupItem = new ToolStripMenuItem("Start with Windows")
@@ -133,23 +144,25 @@ namespace EmojiPicker
             startupItem.CheckedChanged += (_, _) => SetStartupEnabled(startupItem.Checked);
             menu.Items.Add(startupItem);
 
+            var loggingItem = new ToolStripMenuItem("Debug logging")
+            {
+                Checked = Logger.Enabled,
+                ToolTipText = Logger.LogPath,
+            };
+            loggingItem.Click += (_, _) =>
+            {
+                var on = Logger.Toggle();
+                loggingItem.Checked = on;
+                trayIcon?.ShowBalloonTip(
+                    4000,
+                    "Classic Emoji Picker",
+                    on ? $"Debug logging ON\n{Logger.LogPath}" : "Debug logging OFF",
+                    ToolTipIcon.Info);
+            };
+            menu.Items.Add(loggingItem);
+
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Exit", null, (_, _) => Shutdown());
-
-            // Shift+right-click toggles debug logging instead of opening the menu
-            menu.Opening += (_, args) =>
-            {
-                if ((Control.ModifierKeys & Keys.Shift) != 0)
-                {
-                    args.Cancel = true;
-                    var on = Logger.Toggle();
-                    trayIcon?.ShowBalloonTip(
-                        4000,
-                        "Classic Emoji Picker",
-                        on ? $"Debug logging ON\n{Logger.LogPath}" : "Debug logging OFF",
-                        ToolTipIcon.Info);
-                }
-            };
 
             trayIcon = new NotifyIcon
             {
@@ -158,7 +171,15 @@ namespace EmojiPicker
                 Visible = true,
                 ContextMenuStrip = menu,
             };
-            trayIcon.DoubleClick += (_, _) => picker?.ShowPicker();
+            trayIcon.DoubleClick += (_, _) => ShowPickerFromTray();
+        }
+
+        private void ShowPickerFromTray()
+        {
+            // Opened by mouse from the tray: there is no caret to anchor to, and a
+            // rect left over from an earlier hotkey press would be misleading
+            PreviousCaretRect = null;
+            picker?.ShowPicker();
         }
 
         private static Icon LoadTrayIcon()

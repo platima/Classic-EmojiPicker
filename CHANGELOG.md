@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.1.3] - 2026-07-09
+## [v0.1.3] - 2026-07-10
 
 ### Fixed
+- **Picker opened at the mouse pointer, not where you were typing** - the target app's text caret position is now captured at hotkey time (classic edit controls and Chromium/Electron apps expose it) and the picker anchors to it like the Windows 10 panel, falling back to the mouse pointer when no caret is available. When there's no room below the anchor (e.g. typing near the bottom of the screen), the picker opens *above* it instead of clamping to the screen edge
+- **Debug logging toggle** - now a normal checkable **Debug logging** item in the tray menu; the old Shift+right-click gesture didn't work reliably on Windows 11
 - **Laggy typing and slow opens** - the emoji grid now uses a UI-virtualized `VirtualizingWrapPanel`, so only the visible cells (~65) render instead of the whole category (up to ~310). Steady-state open dropped to ~40 ms; a startup pre-warm makes the first hotkey open fast too
 - **Inserting into controls that lose focus** - the focused child control (e.g. File Explorer's Search box or address bar) is now captured at hotkey time and focus is restored to it before typing, so the emoji lands in the right place (best-effort; some shell/UIA surfaces may still resist)
 - **Couldn't switch category tabs** - the tabs required a mouse click, which didn't land reliably because the picker holds keyboard focus without always being the active window. **Tab / Shift+Tab** now cycle categories from the keyboard, and tabs also respond on mouse-up (like emoji selection) so clicking is more reliable

@@ -41,6 +41,9 @@ namespace EmojiPicker
         [DllImport("user32.dll")]
         private static extern bool GetGUIThreadInfo(uint idThread, ref GUITHREADINFO lpgui);
 
+        [DllImport("user32.dll")]
+        private static extern bool ClientToScreen(IntPtr hWnd, ref System.Drawing.Point lpPoint);
+
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT
         {
@@ -120,6 +123,39 @@ namespace EmojiPicker
             }
 
             return topLevel;
+        }
+
+        /// <summary>
+        /// Screen-coordinate rectangle of the text caret in <paramref name="topLevel"/>'s
+        /// thread, when the app exposes one (classic edit controls do; Chromium and
+        /// Electron apps publish one for accessibility). Returns false when there is
+        /// no system caret, so the caller can fall back to the mouse position.
+        /// </summary>
+        public static bool TryGetCaretRect(IntPtr topLevel, out System.Drawing.Rectangle rect)
+        {
+            rect = default;
+            if (topLevel == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            var threadId = GetWindowThreadProcessId(topLevel, out _);
+            var gui = new GUITHREADINFO { cbSize = Marshal.SizeOf<GUITHREADINFO>() };
+            if (threadId == 0 || !GetGUIThreadInfo(threadId, ref gui) || gui.hwndCaret == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            // rcCaret is in hwndCaret's client coordinates; convert both corners
+            var topLeft = new System.Drawing.Point(gui.rcCaret.Left, gui.rcCaret.Top);
+            var bottomRight = new System.Drawing.Point(gui.rcCaret.Right, gui.rcCaret.Bottom);
+            if (!ClientToScreen(gui.hwndCaret, ref topLeft) || !ClientToScreen(gui.hwndCaret, ref bottomRight))
+            {
+                return false;
+            }
+
+            rect = System.Drawing.Rectangle.FromLTRB(topLeft.X, topLeft.Y, bottomRight.X, bottomRight.Y);
+            return true;
         }
 
         /// <summary>
