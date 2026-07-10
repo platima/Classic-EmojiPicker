@@ -367,8 +367,13 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Custom application files
-# Uncomment if you want to exclude the font file from version control
-# Fonts/seguiemj.ttf
+# Segoe UI Emoji is a Microsoft system font and must NOT be redistributed;
+# never commit it (colour emoji render from the system font via Emoji.Wpf)
+**/seguiemj.ttf
+EmojiPicker/Fonts/
+
+# Claude Code local agent files (plans, settings, memory)
+.claude/
 
 # User-specific files
 *.suo
