@@ -9,9 +9,9 @@ This is a standalone WPF application that recreates the Windows 10 emoji picker 
 ## Current Development Status
 See Project README.md
 
-## Deisgn Goals
+## Design Goals
 1. Must match Windows 10 emoji picker functionality as 1:1 as possible
-2. No external dependencies that do not ship with Windows 11 in final executable
+2. Ship a self-contained executable that needs nothing installed beyond what Windows 11 already provides (the emoji font). Library dependencies (Emoji.Wpf, VirtualizingWrapPanel) are bundled into the build, not required on the machine
 
 ## Technical Stack & Decisions
 - **Framework**: WPF with .NET 8 (modern, performant, included with Windows 11)
@@ -23,13 +23,13 @@ See Project README.md
 
 ## Code Architecture
 - **App.xaml.cs**: Tray host - single-instance mutex, `NotifyIcon` menu, installs the hook, applies the theme, owns the resident lifecycle (`ShutdownMode.OnExplicitShutdown`)
-- **HotkeyListener.cs**: `WH_KEYBOARD_LL` hook; on Win+. it captures the foreground window, raises an event, and swallows the key so the built-in panel is suppressed
-- **MainWindow.xaml.cs**: `Emoji`/`EmojiCategory` classes and picker logic; `ShowPicker()` positions near the cursor and force-foregrounds (AttachThreadInput); selection hides (not closes) the reused window
+- **HotkeyListener.cs**: `WH_KEYBOARD_LL` hook; on Win+. it captures the foreground window, focused child control, and text caret rectangle, raises an event, and swallows the key so the built-in panel is suppressed
+- **MainWindow.xaml.cs**: `Emoji`/`EmojiCategory` classes and picker logic; `ShowPicker()` anchors to the captured text caret (mouse-pointer fallback) and force-foregrounds (AttachThreadInput); selection hides (not closes) the reused window. The emoji grid is UI-virtualized (VirtualizingWrapPanel); search is debounced and matches names + keyword tags with name matches ranked first
 - **Emoji Data**: Full Unicode set from Emoji.Wpf's `EmojiData.AllGroups`, mapped to the seven Win10 categories in `GroupToCategory`
 - **Insertion**: `TextInjector.cs` types the emoji into the previously focused window (SendInput/KEYEVENTF_UNICODE), clipboard fallback
 - **Theming**: `ThemeManager.cs` merges `Theme/Light|DarkTheme.xaml` per the Windows setting and swaps live on `SystemEvents.UserPreferenceChanged`; XAML uses `DynamicResource` brushes
 - **Recent Emojis**: Persisted to `%APPDATA%\ClassicEmojiPicker\recent.json`
-- **Keyboard**: Window-level PreviewKeyDown - arrows move selection, Enter commits, ESC dismisses; focus lives in the search box
+- **Keyboard**: Window-level PreviewKeyDown - arrows move selection, Tab/Shift+Tab switch category, Enter commits, ESC dismisses; focus lives in the search box
 - **WinForms interop note**: `UseWindowsForms` is on for the tray icon, but the WinForms implicit global using is removed in the csproj to avoid clashing with WPF types; import `System.Windows.Forms` explicitly where needed
 
 ## Development Environment
@@ -46,7 +46,7 @@ See Project README.md
 ## Development Context
 - This project was created to replace Windows 11's emoji picker which became bloated
 - User specifically wanted Windows 10 design with no additional features
-- Font file is user-provided and confirmed compatible
+- No fonts are bundled; colour emoji render with the system Segoe UI Emoji font via Emoji.Wpf
 - Focus is on clean, functional implementation over feature richness
 
 ## When Providing Assistance
@@ -55,10 +55,10 @@ See Project README.md
 - Maintain focus on core emoji picking functionality
 - Respect the "no bloat" philosophy
 - Think about memory usage and startup time impact
-- Code format must abide by the rules in .clang-format if it exists
+- Code format must abide by `.editorconfig` (run `dotnet format`)
 - Do not add "// FIXED" comments to code
 - Do not stray from the users request or make changes that were not asked for
-- The GitHub repository URL is https://github.com/platima/Classic-EmojiPicker and currently private
+- The GitHub repository URL is https://github.com/platima/Classic-EmojiPicker
 
 ## File Dependencies
 - **Segoe UI Emoji**: System font used for rendering (ships with Windows 10 1809+ / Windows 11)

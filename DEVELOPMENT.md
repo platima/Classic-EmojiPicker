@@ -26,7 +26,7 @@
 4. **Build the installer** (requires [Inno Setup 6](https://jrsoftware.org/isdl.php)):
    ```powershell
    dotnet publish EmojiPicker/EmojiPicker.csproj -c Release -r win-x64 --self-contained true -o ./publish
-   ISCC.exe /DAppVersion=0.1.1 "/DPublishDir=$(Resolve-Path ./publish)" installer/EmojiPicker.iss
+   ISCC.exe /DAppVersion=0.1.3 "/DPublishDir=$(Resolve-Path ./publish)" installer/EmojiPicker.iss
    ```
    The release GitHub Actions workflow does this automatically for tagged builds.
 
@@ -91,7 +91,7 @@ dotnet format --verify-no-changes
 
 #### **UI Guidelines**
 - Match Windows 10 design exactly
-- Use embedded font resources
+- Render colour emoji with the system Segoe UI Emoji font (via Emoji.Wpf); no fonts are bundled
 - Custom styles defined in XAML resources
 - Responsive layout with proper wrapping
 
@@ -99,10 +99,11 @@ dotnet format --verify-no-changes
 
 #### **Manual Testing Checklist**
 - [ ] App starts to the tray with no visible window
-- [ ] **Win+.** opens the picker near the cursor and the built-in Windows panel does NOT appear
+- [ ] **Win+.** opens the picker at the text caret (mouse-pointer fallback) and the built-in Windows panel does NOT appear
 - [ ] Search box is focused on open; typing filters immediately
-- [ ] All seven category tabs work and show populated grids
+- [ ] All seven category tabs work (click and Tab/Shift+Tab) and show populated grids
 - [ ] Arrow keys move the selection; Enter inserts the highlighted emoji into the app you came from
+- [ ] Search matches by keyword too (e.g. "splash" finds 💦), with name matches ranked first
 - [ ] Clipboard fallback works when there is no target window
 - [ ] Picker hides after selection, on focus loss, and on ESC (process stays in the tray)
 - [ ] Recent emojis persist across restarts
@@ -147,10 +148,10 @@ git push origin v0.x.x
 - **Build Fails:** Check .NET 8 SDK installation
 - **Emoji Render as Monochrome/Boxes:** Ensure the system Segoe UI Emoji font is present (bundled with Windows 10 1809+)
 - **Formatting Errors:** Run `dotnet format` to auto-fix
-- **Picker doesn't appear on Win+.:** Enable debug logging (**Shift+right-click** the tray icon) and inspect `%APPDATA%\ClassicEmojiPicker\debug.log` - the `PositionNearCursor`/`ShowPicker done` lines record the computed coordinates and DPI scale
+- **Picker doesn't appear on Win+.:** Enable debug logging (tray menu → **Debug logging**) and inspect `%APPDATA%\ClassicEmojiPicker\debug.log` - the `PositionNearCursor`/`ShowPicker done` lines record the anchor (caret vs mouse), computed coordinates, and DPI scale
 
 #### **Debug Logging**
-Shift+right-click the tray icon to toggle a diagnostic log at `%APPDATA%\ClassicEmojiPicker\debug.log` (off by default; a balloon tip confirms the state). It records the hotkey, positioning, foreground, and insertion path; fatal exceptions are always written regardless of the toggle. See `Logger.cs`.
+Toggle the tray menu's **Debug logging** item to write a diagnostic log at `%APPDATA%\ClassicEmojiPicker\debug.log` (off by default; a balloon tip confirms the state). It records the hotkey, positioning, foreground, and insertion path; fatal exceptions are always written regardless of the toggle. See `Logger.cs`.
 
 #### **Debug Configuration**
 ```xml

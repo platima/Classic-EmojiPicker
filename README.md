@@ -9,16 +9,17 @@
 
 A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 11 users who prefer the simpler, cleaner interface without GIFs and bloated features.
 
-## ✅ Current Status: v0.1.1 - Working Release
+## ✅ Current Status: v0.1.3 - Working Release
 
 This version includes core functionality and is ready for daily use:
 
 - ✅ **Replaces Win+.** - takes over the emoji shortcut so it opens this picker instead of the built-in panel
 - ✅ **Full Unicode emoji set** (~1,400 emoji) in the original seven Windows 10 categories
+- ✅ **Opens where you're typing** - anchors to the text caret (mouse pointer fallback), like the Windows 10 panel
 - ✅ **Direct insertion** - the selected emoji is typed into the app you were using
 - ✅ **Dark mode** - automatically follows the Windows light/dark setting
-- ✅ **Search functionality** by emoji name, focused and ready as soon as the picker opens
-- ✅ **Keyboard driven** - arrow keys move the selection, Enter inserts, ESC closes
+- ✅ **Search by name or keyword** (e.g. "splash" finds 💦), focused and ready as soon as the picker opens
+- ✅ **Keyboard driven** - arrow keys move the selection, Tab/Shift+Tab switch category, Enter inserts, ESC closes
 - ✅ **Installer** with optional start-with-Windows
 
 ## Features
@@ -220,7 +221,7 @@ dotnet build --configuration Release
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. Third-party components and their licences are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Acknowledgments
 
