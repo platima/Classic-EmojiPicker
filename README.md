@@ -9,6 +9,10 @@
 
 A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 11 users who prefer the simpler, cleaner interface without GIFs and bloated features.
 
+<p align="center">
+  <img src="Screenshot.png" alt="Classic Emoji Picker in dark mode showing the Smiley faces and animals category, with the search box, emoji grid, and category tabs" width="360">
+</p>
+
 ## ✅ Current Status: v0.1.3 - Working Release
 
 This version includes core functionality and is ready for daily use:
