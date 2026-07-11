@@ -67,6 +67,7 @@ namespace EmojiPicker
         private List<Emoji> recentEmojis = new List<Emoji>();
         private string currentCategory = DefaultCategoryKey;
         private bool isShowing;
+        private bool recentsDirty;
 
         public MainWindow()
         {
@@ -93,17 +94,32 @@ namespace EmojiPicker
                     return 1;
                 }
 
-                if (EmojiGrid.ItemContainerGenerator.ContainerFromIndex(0) is not UIElement first)
-                {
-                    return Math.Max(1, (int)(EmojiGrid.ActualWidth / ItemCellWidth));
-                }
-
-                var topY = first.TranslatePoint(new System.Windows.Point(0, 0), EmojiGrid).Y;
-                var columns = 0;
+                // Scan from the first *realized* container (when scrolled deep,
+                // index 0 is virtualized away) and count how many share its row
+                var firstRealized = -1;
                 for (var i = 0; i < EmojiGrid.Items.Count; i++)
                 {
-                    // The top row is always realized; stop once we leave it (or hit
-                    // a virtualized item further down)
+                    if (EmojiGrid.ItemContainerGenerator.ContainerFromIndex(i) is UIElement)
+                    {
+                        firstRealized = i;
+                        break;
+                    }
+                }
+
+                if (firstRealized < 0)
+                {
+                    // Nothing realized yet: estimate from the width, allowing for
+                    // the 10px themed scrollbar (or the estimate lands one high)
+                    return Math.Max(1, (int)((EmojiGrid.ActualWidth - 12) / ItemCellWidth));
+                }
+
+                var first = (UIElement)EmojiGrid.ItemContainerGenerator.ContainerFromIndex(firstRealized);
+                var topY = first.TranslatePoint(new System.Windows.Point(0, 0), EmojiGrid).Y;
+                var columns = 0;
+                for (var i = firstRealized; i < EmojiGrid.Items.Count; i++)
+                {
+                    // Rows are realized whole; stop once we leave the first
+                    // realized row (or hit a virtualized item further down)
                     if (EmojiGrid.ItemContainerGenerator.ContainerFromIndex(i) is not UIElement cell)
                     {
                         break;
@@ -188,7 +204,7 @@ namespace EmojiPicker
             Keyboard.Focus(SearchBox);
 
             Logger.Log($"ShowPicker done in {stopwatch.ElapsedMilliseconds}ms: Left={Left:F0} Top={Top:F0} " +
-                $"W={Width} H={Height} foreground={GetForegroundWindow()} thisHwnd={handle}");
+                $"W={Width} H={Height} foreground={NativeMethods.GetForegroundWindow()} thisHwnd={handle}");
 
             // Clear the guard once the show/activation storm has settled
             Dispatcher.BeginInvoke(new Action(() => isShowing = false), System.Windows.Threading.DispatcherPriority.Background);
@@ -201,18 +217,18 @@ namespace EmojiPicker
         /// </summary>
         private static void ForceForeground(IntPtr hwnd)
         {
-            var foregroundThread = GetWindowThreadProcessId(GetForegroundWindow(), out _);
-            var thisThread = GetCurrentThreadId();
+            var foregroundThread = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), out _);
+            var thisThread = NativeMethods.GetCurrentThreadId();
 
             if (foregroundThread != thisThread && foregroundThread != 0)
             {
-                AttachThreadInput(foregroundThread, thisThread, true);
-                SetForegroundWindow(hwnd);
-                AttachThreadInput(foregroundThread, thisThread, false);
+                NativeMethods.AttachThreadInput(foregroundThread, thisThread, true);
+                NativeMethods.SetForegroundWindow(hwnd);
+                NativeMethods.AttachThreadInput(foregroundThread, thisThread, false);
             }
             else
             {
-                SetForegroundWindow(hwnd);
+                NativeMethods.SetForegroundWindow(hwnd);
             }
         }
 
@@ -231,7 +247,7 @@ namespace EmojiPicker
                 anchorBottom = caret.Bottom;
                 anchor = "caret";
             }
-            else if (GetCursorPos(out var cursor))
+            else if (NativeMethods.GetCursorPos(out var cursor))
             {
                 anchorX = cursor.X;
                 anchorTop = cursor.Y;
@@ -248,7 +264,7 @@ namespace EmojiPicker
             // Left/Top are in device-independent units. Convert with the window's DPI
             // scale, or the panel lands off-screen on scaled/high-DPI displays.
             var hwnd = new WindowInteropHelper(this).EnsureHandle();
-            double scale = GetDpiForWindow(hwnd) / 96.0;
+            double scale = NativeMethods.GetDpiForWindow(hwnd) / 96.0;
             if (scale <= 0)
             {
                 scale = 1.0;
@@ -364,7 +380,7 @@ namespace EmojiPicker
 
         // Emoji.Wpf and the keyword data can differ on the FE0F variation selector;
         // strip it so lookups line up
-        private static string NormalizeEmoji(string text) => text.Replace("️", string.Empty);
+        private static string NormalizeEmoji(string text) => text.Replace("\uFE0F", string.Empty);
 
         private static Dictionary<string, string> LoadKeywords()
         {
@@ -483,7 +499,12 @@ namespace EmojiPicker
                 return;
             }
 
-            var searchText = SearchBox.Text;
+            // Trim so an accidental trailing space doesn't zero out the results
+            var searchText = SearchBox.Text.Trim();
+            if (searchText.Length == 0)
+            {
+                return;
+            }
 
             // Rank name matches ahead of keyword-only matches so an incidental tag
             // (e.g. heart decoration's "white" tag for "whi") never outranks the
@@ -617,11 +638,24 @@ namespace EmojiPicker
             // Defer the insertion until the current input event has finished
             // processing: injecting keystrokes from inside a key/mouse handler
             // corrupts the injected Unicode sequence
-            Dispatcher.BeginInvoke(new Action(() =>
+            Dispatcher.BeginInvoke(new Action(async () =>
             {
                 // Insert into the app that was focused before the picker opened,
-                // like the Windows 10 panel; fall back to the clipboard otherwise
-                if (!TextInjector.TryInsert(App.PreviousForegroundWindow, App.PreviousFocusWindow, emoji.Character))
+                // like the Windows 10 panel; fall back to the clipboard otherwise.
+                // Awaited so the focus-settle delay doesn't block the UI thread.
+                bool inserted;
+                try
+                {
+                    inserted = await TextInjector.TryInsertAsync(
+                        App.PreviousForegroundWindow, App.PreviousFocusWindow, emoji.Character);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogAlways($"Insert threw: {ex}");
+                    inserted = false;
+                }
+
+                if (!inserted)
                 {
                     Logger.Log("Insert failed; falling back to clipboard");
                     try
@@ -638,11 +672,18 @@ namespace EmojiPicker
 
         /// <summary>
         /// Hides the resident picker (it is reused on the next hotkey press)
-        /// and persists the recents list.
+        /// and persists the recents list. Public so the hotkey can toggle the
+        /// picker closed when pressed while it is already open.
         /// </summary>
-        private void DismissPicker()
+        public void DismissPicker()
         {
-            SaveRecentEmojis();
+            searchTimer.Stop(); // no point filtering a hidden grid
+            if (recentsDirty)
+            {
+                SaveRecentEmojis();
+                recentsDirty = false;
+            }
+
             Hide();
 
             // Give the memory back while we idle in the tray; ContextIdle runs
@@ -679,6 +720,7 @@ namespace EmojiPicker
                 recentEmojis.RemoveAt(recentEmojis.Count - 1);
             }
 
+            recentsDirty = true;
             Logger.Log($"AddToRecent '{emoji.Character}' -> recents now {recentEmojis.Count}");
         }
 
@@ -732,38 +774,22 @@ namespace EmojiPicker
         {
             if (e.Key == Key.Escape)
             {
-                DismissPicker();
+                // First Esc clears an active search (back to the category);
+                // Esc with nothing to clear closes the picker
+                if (SearchBox.Text.Trim().Length > 0)
+                {
+                    SearchBox.Clear(); // TextChanged restores the category
+                }
+                else
+                {
+                    DismissPicker();
+                }
+
+                e.Handled = true;
             }
             base.OnKeyDown(e);
         }
 
-        [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-
-        [DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-
-        [DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
-
-        [DllImport("user32.dll")]
-        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-
-        [DllImport("user32.dll")]
-        private static extern bool GetCursorPos(out POINT lpPoint);
-
-        [DllImport("user32.dll")]
-        private static extern uint GetDpiForWindow(IntPtr hWnd);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct POINT
-        {
-            public int X;
-            public int Y;
-        }
     }
 
     public class Emoji

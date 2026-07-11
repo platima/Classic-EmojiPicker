@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Threading;
+using System.Security.Principal;
+using System.Threading.Tasks;
 
 namespace EmojiPicker
 {
@@ -10,97 +11,10 @@ namespace EmojiPicker
     /// </summary>
     internal static class TextInjector
     {
-        private const uint InputKeyboard = 1;
-        private const uint KeyEventKeyUp = 0x0002;
-        private const uint KeyEventUnicode = 0x0004;
-
-        [DllImport("user32.dll")]
-        internal static extern IntPtr GetForegroundWindow();
-
-        [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        private static extern bool IsWindow(IntPtr hWnd);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
-
-        [DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-
-        [DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
-
-        [DllImport("user32.dll")]
-        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr SetFocus(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        private static extern bool GetGUIThreadInfo(uint idThread, ref GUITHREADINFO lpgui);
-
-        [DllImport("user32.dll")]
-        private static extern bool ClientToScreen(IntPtr hWnd, ref System.Drawing.Point lpPoint);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct RECT
-        {
-            public int Left;
-            public int Top;
-            public int Right;
-            public int Bottom;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct GUITHREADINFO
-        {
-            public int cbSize;
-            public uint flags;
-            public IntPtr hwndActive;
-            public IntPtr hwndFocus;
-            public IntPtr hwndCapture;
-            public IntPtr hwndMenuOwner;
-            public IntPtr hwndMoveSize;
-            public IntPtr hwndCaret;
-            public RECT rcCaret;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct INPUT
-        {
-            public uint type;
-            public InputUnion u;
-        }
-
-        [StructLayout(LayoutKind.Explicit)]
-        private struct InputUnion
-        {
-            [FieldOffset(0)] public MOUSEINPUT mi;
-            [FieldOffset(0)] public KEYBDINPUT ki;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MOUSEINPUT
-        {
-            public int dx;
-            public int dy;
-            public uint mouseData;
-            public uint dwFlags;
-            public uint time;
-            public IntPtr dwExtraInfo;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct KEYBDINPUT
-        {
-            public ushort wVk;
-            public ushort wScan;
-            public uint dwFlags;
-            public uint time;
-            public IntPtr dwExtraInfo;
-        }
+        // Whether this process runs elevated; injection into an elevated target
+        // from a non-elevated process is silently discarded by UIPI, so we
+        // detect that case and fall back to the clipboard instead
+        private static readonly bool SelfElevated = IsSelfElevated();
 
         /// <summary>
         /// Returns the control that currently has keyboard focus within
@@ -115,9 +29,9 @@ namespace EmojiPicker
                 return topLevel;
             }
 
-            var threadId = GetWindowThreadProcessId(topLevel, out _);
-            var gui = new GUITHREADINFO { cbSize = Marshal.SizeOf<GUITHREADINFO>() };
-            if (threadId != 0 && GetGUIThreadInfo(threadId, ref gui) && gui.hwndFocus != IntPtr.Zero)
+            var threadId = NativeMethods.GetWindowThreadProcessId(topLevel, out _);
+            var gui = new NativeMethods.GUITHREADINFO { cbSize = Marshal.SizeOf<NativeMethods.GUITHREADINFO>() };
+            if (threadId != 0 && NativeMethods.GetGUIThreadInfo(threadId, ref gui) && gui.hwndFocus != IntPtr.Zero)
             {
                 return gui.hwndFocus;
             }
@@ -139,9 +53,9 @@ namespace EmojiPicker
                 return false;
             }
 
-            var threadId = GetWindowThreadProcessId(topLevel, out _);
-            var gui = new GUITHREADINFO { cbSize = Marshal.SizeOf<GUITHREADINFO>() };
-            if (threadId == 0 || !GetGUIThreadInfo(threadId, ref gui) || gui.hwndCaret == IntPtr.Zero)
+            var threadId = NativeMethods.GetWindowThreadProcessId(topLevel, out _);
+            var gui = new NativeMethods.GUITHREADINFO { cbSize = Marshal.SizeOf<NativeMethods.GUITHREADINFO>() };
+            if (threadId == 0 || !NativeMethods.GetGUIThreadInfo(threadId, ref gui) || gui.hwndCaret == IntPtr.Zero)
             {
                 return false;
             }
@@ -149,7 +63,7 @@ namespace EmojiPicker
             // rcCaret is in hwndCaret's client coordinates; convert both corners
             var topLeft = new System.Drawing.Point(gui.rcCaret.Left, gui.rcCaret.Top);
             var bottomRight = new System.Drawing.Point(gui.rcCaret.Right, gui.rcCaret.Bottom);
-            if (!ClientToScreen(gui.hwndCaret, ref topLeft) || !ClientToScreen(gui.hwndCaret, ref bottomRight))
+            if (!NativeMethods.ClientToScreen(gui.hwndCaret, ref topLeft) || !NativeMethods.ClientToScreen(gui.hwndCaret, ref bottomRight))
             {
                 return false;
             }
@@ -162,12 +76,24 @@ namespace EmojiPicker
         /// Attempts to focus <paramref name="targetWindow"/> and type <paramref name="text"/> into it.
         /// <paramref name="focusWindow"/> is the child control that had keyboard focus before the
         /// picker opened; focus is restored to it so text lands in the right place. Returns false
-        /// when there is no usable target (e.g. the window is gone or elevated), so the caller can
-        /// fall back to the clipboard.
+        /// when there is no usable target (the window is gone, or it is elevated and we are not -
+        /// UIPI would silently discard the injected input), so the caller can fall back to the
+        /// clipboard. Must be awaited on the UI thread; the focus-settle delay is non-blocking.
         /// </summary>
-        public static bool TryInsert(IntPtr targetWindow, IntPtr focusWindow, string text)
+        public static async Task<bool> TryInsertAsync(IntPtr targetWindow, IntPtr focusWindow, string text)
         {
-            if (targetWindow == IntPtr.Zero || !IsWindow(targetWindow) || !SetForegroundWindow(targetWindow))
+            if (targetWindow == IntPtr.Zero || !NativeMethods.IsWindow(targetWindow))
+            {
+                return false;
+            }
+
+            if (!SelfElevated && IsWindowElevated(targetWindow))
+            {
+                Logger.Log("Insert target is elevated; UIPI would drop the input - using clipboard");
+                return false;
+            }
+
+            if (!NativeMethods.SetForegroundWindow(targetWindow))
             {
                 return false;
             }
@@ -176,55 +102,121 @@ namespace EmojiPicker
             // moves focus off edits like Explorer's Search box or address bar
             RestoreFocus(targetWindow, focusWindow);
 
-            // Give the target window a moment to take keyboard focus before typing
-            Thread.Sleep(250);
+            // Give the target window a moment to take keyboard focus before typing.
+            // Awaited (not slept) so the UI thread keeps pumping; the continuation
+            // resumes on the dispatcher via its synchronization context.
+            await Task.Delay(250);
+
+            if (!NativeMethods.IsWindow(targetWindow))
+            {
+                return false; // target closed while we waited
+            }
 
             // All key-downs first, then all key-ups: the two halves of a surrogate
             // pair must produce consecutive WM_CHAR messages or the receiving edit
             // control shows two broken characters instead of one emoji
-            var inputs = new INPUT[text.Length * 2];
+            var inputs = new NativeMethods.INPUT[text.Length * 2];
             for (int i = 0; i < text.Length; i++)
             {
                 inputs[i] = UnicodeKeyEvent(text[i], keyUp: false);
                 inputs[text.Length + i] = UnicodeKeyEvent(text[i], keyUp: true);
             }
 
-            return SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>()) == (uint)inputs.Length;
+            return NativeMethods.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<NativeMethods.INPUT>()) == (uint)inputs.Length;
         }
 
         private static void RestoreFocus(IntPtr targetWindow, IntPtr focusWindow)
         {
-            if (focusWindow == IntPtr.Zero || focusWindow == targetWindow || !IsWindow(focusWindow))
+            if (focusWindow == IntPtr.Zero || focusWindow == targetWindow || !NativeMethods.IsWindow(focusWindow))
             {
                 return;
             }
 
-            var targetThread = GetWindowThreadProcessId(targetWindow, out _);
-            var thisThread = GetCurrentThreadId();
+            var targetThread = NativeMethods.GetWindowThreadProcessId(targetWindow, out _);
+            var thisThread = NativeMethods.GetCurrentThreadId();
 
             // Focus is per input-queue; attach to the target thread so SetFocus takes
-            if (targetThread != 0 && targetThread != thisThread && AttachThreadInput(thisThread, targetThread, true))
+            if (targetThread != 0 && targetThread != thisThread && NativeMethods.AttachThreadInput(thisThread, targetThread, true))
             {
-                SetFocus(focusWindow);
-                AttachThreadInput(thisThread, targetThread, false);
+                NativeMethods.SetFocus(focusWindow);
+                NativeMethods.AttachThreadInput(thisThread, targetThread, false);
             }
             else
             {
-                SetFocus(focusWindow);
+                NativeMethods.SetFocus(focusWindow);
             }
         }
 
-        private static INPUT UnicodeKeyEvent(char codeUnit, bool keyUp)
+        private static bool IsSelfElevated()
         {
-            return new INPUT
+            try
             {
-                type = InputKeyboard,
-                u = new InputUnion
+                using var identity = WindowsIdentity.GetCurrent();
+                return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// True when the window's owning process runs elevated (or is so protected
+        /// we can't even query it, which implies the same for injection purposes).
+        /// </summary>
+        private static bool IsWindowElevated(IntPtr window)
+        {
+            NativeMethods.GetWindowThreadProcessId(window, out var pid);
+            if (pid == 0)
+            {
+                return false;
+            }
+
+            var process = NativeMethods.OpenProcess(NativeMethods.ProcessQueryLimitedInformation, false, pid);
+            if (process == IntPtr.Zero)
+            {
+                return true; // can't query at all -> treat as protected
+            }
+
+            try
+            {
+                if (!NativeMethods.OpenProcessToken(process, NativeMethods.TokenQuery, out var token))
                 {
-                    ki = new KEYBDINPUT
+                    return true;
+                }
+
+                try
+                {
+                    if (NativeMethods.GetTokenInformation(token, NativeMethods.TokenElevation,
+                        out var elevated, sizeof(int), out _))
+                    {
+                        return elevated != 0;
+                    }
+
+                    return false;
+                }
+                finally
+                {
+                    NativeMethods.CloseHandle(token);
+                }
+            }
+            finally
+            {
+                NativeMethods.CloseHandle(process);
+            }
+        }
+
+        private static NativeMethods.INPUT UnicodeKeyEvent(char codeUnit, bool keyUp)
+        {
+            return new NativeMethods.INPUT
+            {
+                type = NativeMethods.InputKeyboard,
+                u = new NativeMethods.InputUnion
+                {
+                    ki = new NativeMethods.KEYBDINPUT
                     {
                         wScan = codeUnit,
-                        dwFlags = KeyEventUnicode | (keyUp ? KeyEventKeyUp : 0),
+                        dwFlags = NativeMethods.KeyEventUnicode | (keyUp ? NativeMethods.KeyEventKeyUp : 0),
                     },
                 },
             };

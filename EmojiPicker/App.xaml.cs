@@ -36,11 +36,19 @@ namespace EmojiPicker
         /// </summary>
         public static System.Drawing.Rectangle? PreviousCaretRect { get; set; }
 
+        // Run-again signals arriving this soon after startup are ignored: when
+        // both the HKLM (all-users installer) and HKCU (tray toggle) Run values
+        // exist, the second logon start would otherwise pop the picker open
+        private static readonly TimeSpan StartupShowGrace = TimeSpan.FromSeconds(3);
+
         private Mutex? instanceMutex;
         private EventWaitHandle? showEvent;
         private MainWindow? picker;
         private HotkeyListener? hotkey;
         private NotifyIcon? trayIcon;
+        private Thread? showThread;
+        private volatile bool shuttingDown;
+        private DateTime startupUtc;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -66,12 +74,19 @@ namespace EmojiPicker
             }
 
             Logger.Initialize();
+            startupUtc = DateTime.UtcNow;
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             Logger.Log($"=== Startup v{version} ===");
 
-            // Record otherwise-silent crashes even when logging is toggled off
+            // A resident utility should survive a bad frame: log the exception
+            // and keep running rather than take Win+. down until relaunch
             DispatcherUnhandledException += (_, args) =>
-                Logger.LogAlways($"FATAL (UI): {args.Exception}");
+            {
+                Logger.LogAlways($"UNHANDLED (UI, continuing): {args.Exception}");
+                args.Handled = true;
+                trayIcon?.ShowBalloonTip(4000, "Classic Emoji Picker",
+                    $"Something went wrong; details in {Logger.LogPath}", ToolTipIcon.Warning);
+            };
             AppDomain.CurrentDomain.UnhandledException += (_, args) =>
                 Logger.LogAlways($"FATAL: {args.ExceptionObject}");
 
@@ -91,7 +106,7 @@ namespace EmojiPicker
 
             // Let a second launch (e.g. running the shortcut again) open the picker
             showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
-            var showThread = new Thread(ShowEventLoop) { IsBackground = true };
+            showThread = new Thread(ShowEventLoop) { IsBackground = true };
             showThread.Start();
 
             CreateTrayIcon();
@@ -102,6 +117,21 @@ namespace EmojiPicker
             // The hook captured the foreground window, focused control, and caret at
             // key-press time; the picker inserts the chosen emoji back into it
             Logger.Log($"Hotkey pressed; target={targetWindow} focus={focusWindow} caret={(caretRect.HasValue ? caretRect.Value.ToString() : "none")}");
+
+            // Win+. while the picker is open dismisses it (like the Windows 10
+            // panel). Without this, the hook would capture the picker itself as
+            // the insertion target and the chosen emoji would go nowhere.
+            if (picker != null && targetWindow == new System.Windows.Interop.WindowInteropHelper(picker).Handle)
+            {
+                if (picker.IsVisible)
+                {
+                    Logger.Log("Hotkey while open -> toggle dismiss");
+                    picker.DismissPicker();
+                }
+
+                return; // hidden-but-captured is a stale race; keep the old target
+            }
+
             PreviousForegroundWindow = targetWindow;
             PreviousFocusWindow = focusWindow;
             PreviousCaretRect = caretRect;
@@ -112,23 +142,43 @@ namespace EmojiPicker
         {
             while (showEvent != null && showEvent.WaitOne())
             {
-                var target = GetForegroundWindow();
+                if (shuttingDown)
+                {
+                    return;
+                }
+
+                // Snapshot the foreground state on this thread, at signal time
+                var target = NativeMethods.GetForegroundWindow();
                 var focus = TextInjector.GetFocusedControl(target);
                 System.Drawing.Rectangle? caret =
                     TextInjector.TryGetCaretRect(target, out var caretRect) ? caretRect : null;
+
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
+                    // Ignore signals right after startup: with both the HKLM and
+                    // HKCU Run values present (all-users install + tray toggle),
+                    // the second logon start signals us and would pop the picker
+                    if (DateTime.UtcNow - startupUtc < StartupShowGrace)
+                    {
+                        Logger.Log("Show requested (run-again) ignored during startup grace");
+                        return;
+                    }
+
                     Logger.Log("Show requested (run-again)");
-                    PreviousForegroundWindow = target;
-                    PreviousFocusWindow = focus;
-                    PreviousCaretRect = caret;
+
+                    // Don't let the picker become its own insertion target when
+                    // it is already open; keep whatever target it had
+                    if (picker == null || target != new System.Windows.Interop.WindowInteropHelper(picker).Handle)
+                    {
+                        PreviousForegroundWindow = target;
+                        PreviousFocusWindow = focus;
+                        PreviousCaretRect = caret;
+                    }
+
                     picker?.ShowPicker();
                 }));
             }
         }
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
 
         private void CreateTrayIcon()
         {
@@ -142,6 +192,16 @@ namespace EmojiPicker
                 CheckOnClick = true,
             };
             startupItem.CheckedChanged += (_, _) => SetStartupEnabled(startupItem.Checked);
+            if (IsMachineStartupEnabled())
+            {
+                // An all-users install manages autostart via HKLM, which this
+                // per-user toggle can't change - show it as on and read-only
+                startupItem.Checked = true;
+                startupItem.CheckOnClick = false;
+                startupItem.Enabled = false;
+                startupItem.ToolTipText = "Enabled for all users by the installer";
+            }
+
             menu.Items.Add(startupItem);
 
             var loggingItem = new ToolStripMenuItem("Debug logging")
@@ -176,8 +236,12 @@ namespace EmojiPicker
 
         private void ShowPickerFromTray()
         {
-            // Opened by mouse from the tray: there is no caret to anchor to, and a
-            // rect left over from an earlier hotkey press would be misleading
+            // Opened by mouse from the tray: there is no caret to anchor to, and
+            // the target/caret left over from an earlier hotkey press would send
+            // the emoji to a window the user isn't looking at any more. With no
+            // target, a pick falls back to the clipboard - predictable.
+            PreviousForegroundWindow = IntPtr.Zero;
+            PreviousFocusWindow = IntPtr.Zero;
             PreviousCaretRect = null;
             picker?.ShowPicker();
         }
@@ -207,6 +271,23 @@ namespace EmojiPicker
             try
             {
                 using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(RunKeyPath);
+                return key?.GetValue(RunValueName) != null;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// True when an all-users install registered autostart under HKLM
+        /// (read-only from this per-user process; the tray toggle can't change it).
+        /// </summary>
+        private static bool IsMachineStartupEnabled()
+        {
+            try
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(RunKeyPath);
                 return key?.GetValue(RunValueName) != null;
             }
             catch (Exception)
@@ -249,6 +330,12 @@ namespace EmojiPicker
         {
             hotkey?.Dispose();
             ThemeManager.Shutdown();
+
+            // Wake the show-event thread so it observes the flag and exits before
+            // the handle is disposed (disposing mid-WaitOne throws on that thread)
+            shuttingDown = true;
+            showEvent?.Set();
+            showThread?.Join(1000);
             showEvent?.Dispose();
 
             if (trayIcon != null)

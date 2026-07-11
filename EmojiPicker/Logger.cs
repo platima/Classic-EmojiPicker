@@ -11,6 +11,10 @@ namespace EmojiPicker
     /// </summary>
     internal static class Logger
     {
+        // Rotate before the log grows unbounded (it's opt-in, but users forget
+        // to turn it off); the previous log is kept once as debug.old.log
+        private const long MaxLogBytes = 5 * 1024 * 1024;
+
         private static readonly object Gate = new object();
 
         private static readonly string Dir = Path.Combine(
@@ -89,6 +93,13 @@ namespace EmojiPicker
                 lock (Gate)
                 {
                     Directory.CreateDirectory(Dir);
+
+                    var info = new FileInfo(LogPath);
+                    if (info.Exists && info.Length > MaxLogBytes)
+                    {
+                        File.Move(LogPath, Path.ChangeExtension(LogPath, ".old.log"), overwrite: true);
+                    }
+
                     File.AppendAllText(LogPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}  {message}{Environment.NewLine}");
                 }
             }

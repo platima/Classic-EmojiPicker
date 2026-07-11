@@ -13,12 +13,6 @@ namespace EmojiPicker
     /// </summary>
     internal static class MemoryTrimmer
     {
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr GetCurrentProcess();
-
-        [DllImport("kernel32.dll")]
-        private static extern bool SetProcessWorkingSetSize(IntPtr process, IntPtr min, IntPtr max);
-
         public static void Trim()
         {
             try
@@ -29,7 +23,7 @@ namespace EmojiPicker
 
                 // min = max = -1 asks Windows to page out everything not pinned;
                 // the OS brings pages back on demand
-                SetProcessWorkingSetSize(GetCurrentProcess(), new IntPtr(-1), new IntPtr(-1));
+                NativeMethods.SetProcessWorkingSetSize(NativeMethods.GetCurrentProcess(), new IntPtr(-1), new IntPtr(-1));
                 Logger.Log($"MemoryTrimmer: trimmed, working set now {Environment.WorkingSet / (1024 * 1024)} MB");
             }
             catch (Exception)

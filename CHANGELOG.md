@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased - v0.1.5]
 
+### Fixed (full code review)
+- **Win+. while the picker was open** captured the picker as its own insertion target; it now toggles the picker closed like the Windows 10 panel
+- **Start menu opening when releasing Win after Win+.** - the swallowed `.` made the shell treat Win as a bare tap; a no-op key is now injected in between
+- **Tray-menu / double-click opens** targeted whatever window the *previous hotkey* captured; they now target nothing (picks land on the clipboard, predictably)
+- **Picker popping open at sign-in** when both the all-users (HKLM) and per-user (HKCU) autostart entries exist - run-again signals are ignored for the first 3 s after startup
+- **250 ms UI freeze on every insert** - the focus-settle delay is now awaited instead of blocking the UI thread
+- **Inserting into elevated apps** silently did nothing (Windows drops the injected input); it now detects an elevated target and falls back to the clipboard
+- **Up/Down arrow jumps** could be off by one column when scrolled deep into a category (the fallback column estimate ignored the scrollbar)
+- **Search with a trailing space** (e.g. "splash ") found nothing; input is now trimmed
+- **Esc** now clears an active search first and closes on the second press (previously always closed)
+- **"Start with Windows" tray toggle** now recognises an all-users install (HKLM) and shows as on/read-only instead of misleadingly off
+- **debug.log grew without bound** while logging was enabled; it now rotates at 5 MB (one `.old.log` kept)
+- An unhandled UI exception now logs and keeps the app alive (previously it silently killed the resident process, taking Win+. with it)
+- Hook-installation failure (Win+. dead) is now always logged; a shutdown race that could log spurious fatals is fixed; the FE0F normalizer no longer relies on an invisible character in source; recents only write to disk when changed; P/Invoke declarations consolidated into `NativeMethods`; crisper 1px borders via layout rounding; removed the redundant `code-quality-check.ps1`
+
 ### Added
 - **MSI installer** (`ClassicEmojiPicker-<version>-win-x64.msi`) - self-contained, per-machine, built with WiX for silent/enterprise deployment: `msiexec /i <file> /qn` (add `AUTOSTART=0` to skip the start-with-Windows Run key). Upgrades and uninstalls terminate the running tray app automatically
 - **Install for all users** - the Setup.exe installers now ask whether to install for all users (elevates, Program Files, HKLM Run key) or just the current user (unchanged default); `/ALLUSERS` and `/CURRENTUSER` select the mode in silent installs. Setup warns when the other mode's copy is already installed, and an all-users uninstall also cleans up the uninstalling user's leftover per-user Run value

@@ -15,7 +15,7 @@
         Background="Transparent"
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="Auto"
-        UseLayoutRounding="False"
+        UseLayoutRounding="True"
         ShowInTaskbar="False"
         MouseLeftButtonDown="MainWindow_MouseLeftButtonDown"
         PreviewKeyDown="MainWindow_PreviewKeyDown"
