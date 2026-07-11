@@ -29,19 +29,28 @@ jobs:
     - name: Publish Self-Contained
       run: dotnet publish EmojiPicker/EmojiPicker.csproj --configuration Release --runtime win-x64 --self-contained true --output ./publish
 
-    - name: Create Release Archive
+    - name: Publish Framework-Dependent (lite)
+      run: dotnet publish EmojiPicker/EmojiPicker.csproj --configuration Release --runtime win-x64 --self-contained false --output ./publish-lite
+
+    - name: Create Release Archives
       run: |
         Compress-Archive -Path ./publish/* -DestinationPath ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
+        Compress-Archive -Path ./publish-lite/* -DestinationPath ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64-lite.zip
 
     - name: Install Inno Setup
       run: choco install innosetup --no-progress -y
 
-    - name: Build Installer
+    - name: Build Installers
       run: |
         $version = "${{ github.ref_name }}".TrimStart('v')
         & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
           "/DAppVersion=$version" `
           "/DPublishDir=$(Resolve-Path ./publish)" `
+          installer/EmojiPicker.iss
+        & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+          "/DAppVersion=$version" `
+          "/DPublishDir=$(Resolve-Path ./publish-lite)" `
+          "/DFrameworkDependent=1" `
           installer/EmojiPicker.iss
       shell: pwsh
 
@@ -50,22 +59,28 @@ jobs:
       with:
         files: |
           ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
+          ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64-lite.zip
           ./installer/output/EmojiPicker-Setup-*.exe
         name: Classic Emoji Picker ${{ github.ref_name }}
         body: |
           ## Classic Emoji Picker ${{ github.ref_name }}
 
-          **Recommended:** download `EmojiPicker-Setup-*.exe` and run it (per-user, no admin).
+          **Recommended:** download `EmojiPicker-Setup-<version>.exe` and run it (per-user, no admin).
           Tick "Start with Windows" so **Win+.** opens this picker after every sign-in.
 
-          The `.zip` is a portable, self-contained build - extract it and run `EmojiPicker.exe`.
+          | Download | Size | Needs |
+          |---|---|---|
+          | `EmojiPicker-Setup-<version>.exe` | larger | nothing - runtime included |
+          | `EmojiPicker-Setup-<version>-lite.exe` | small | [.NET Desktop Runtime 8 (x64)](https://dotnet.microsoft.com/download/dotnet/8.0) - setup checks and links it if missing |
+
+          The `.zip` files are the same two builds in portable form - extract and run `EmojiPicker.exe`.
 
           ### What's New
           See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
 
           ### Requirements
           - Windows 11 or Windows 10 (version 1809+)
-          - No additional dependencies required (self-contained)
+          - Full installer/zip: no additional dependencies; lite: .NET Desktop Runtime 8 (x64)
         draft: false
         prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
       env:

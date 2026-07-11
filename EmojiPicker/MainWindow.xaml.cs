@@ -139,6 +139,10 @@ namespace EmojiPicker
                 {
                     Hide();
                     ShowActivated = true;
+
+                    // Startup allocates heavily (emoji database, glyph warm-up);
+                    // return it before settling into the tray
+                    Dispatcher.BeginInvoke(new Action(MemoryTrimmer.Trim), DispatcherPriority.ContextIdle);
                 }),
                 DispatcherPriority.Loaded);
         }
@@ -640,6 +644,10 @@ namespace EmojiPicker
         {
             SaveRecentEmojis();
             Hide();
+
+            // Give the memory back while we idle in the tray; ContextIdle runs
+            // after the hide (and any pending insertion) has fully settled
+            Dispatcher.BeginInvoke(new Action(MemoryTrimmer.Trim), DispatcherPriority.ContextIdle);
         }
 
         private void MainWindow_Deactivated(object sender, EventArgs e)

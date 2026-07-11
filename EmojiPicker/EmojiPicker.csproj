@@ -14,15 +14,18 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 
+    <!-- Resident tray app: prefer a small heap over GC throughput -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+
     <!-- Application Info -->
-    <AssemblyTitle>Windows 10 Emoji Picker</AssemblyTitle>
-    <AssemblyDescription>Lightweight Windows 10 style emoji picker for Windows 11</AssemblyDescription>
-    <AssemblyProduct>Classic EmojiPicker</AssemblyProduct>
-    <AssemblyCopyright>Copyright © Platima 2025</AssemblyCopyright>
-    <AssemblyVersion>0.1.3.0</AssemblyVersion>
-    <FileVersion>0.1.3.0</FileVersion>
-    <Version>0.1.3</Version>
-    <InformationalVersion>0.1.3</InformationalVersion>
+    <AssemblyTitle>Classic Emoji Picker</AssemblyTitle>
+    <AssemblyDescription>Lightweight classic-style emoji picker for Windows</AssemblyDescription>
+    <AssemblyProduct>Classic Emoji Picker</AssemblyProduct>
+    <AssemblyCopyright>Copyright © Platima 2025-2026</AssemblyCopyright>
+    <AssemblyVersion>0.1.4.0</AssemblyVersion>
+    <FileVersion>0.1.4.0</FileVersion>
+    <Version>0.1.4</Version>
+    <InformationalVersion>0.1.4</InformationalVersion>
   </PropertyGroup>
 
   <!-- WinForms is only used for the tray icon (App.xaml.cs imports it explicitly);
@@ -43,6 +46,12 @@
   <ItemGroup>
     <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
     <PackageReference Include="VirtualizingWrapPanel" Version="2.5.2" />
+  </ItemGroup>
+
+  <!-- Trade a little allocation speed for a smaller retained heap (0-9; higher
+       conserves more). Keeps the resident (idle-in-tray) footprint modest. -->
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="6" />
   </ItemGroup>
 
 </Project>

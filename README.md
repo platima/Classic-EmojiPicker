@@ -37,20 +37,22 @@ This version includes core functionality and is ready for daily use:
 - **Recent Emojis** - Recently used emojis are remembered between sessions
 - **Real-time Search** - Just start typing to filter emojis by name or keyword (e.g. "splash" finds 💦)
 - **Keyboard Navigation** - Arrow keys move the highlighted emoji, Tab/Shift+Tab switch category, Enter inserts, ESC closes
-- **Lightweight** - No unnecessary features, GIFs, or bloat
+- **Lightweight** - No unnecessary features, GIFs, or bloat; idles in the tray at ~20 MB
 - **True Colour Emoji** - Rendered with [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) using the system Segoe UI Emoji font
 
 ## Requirements
 
 - Windows 11 (or Windows 10 version 1809+)
-- The installer is self-contained - no separate .NET runtime is required
+- The full installer is self-contained - no separate .NET runtime is required (the lite installer needs the [.NET Desktop Runtime 8 x64](https://dotnet.microsoft.com/download/dotnet/8.0))
 - For building from source: .NET 8 SDK and Visual Studio 2022 or VS Code with the C# extension
 
 ## Installation
 
 ### Option 1: Installer (recommended)
 
-1. Download `EmojiPicker-Setup-<version>.exe` from the [Releases](../../releases) page.
+1. Download an installer from the [Releases](../../releases) page:
+   - `EmojiPicker-Setup-<version>.exe` - **full**: includes the .NET runtime, needs nothing else (larger download)
+   - `EmojiPicker-Setup-<version>-lite.exe` - **lite**: much smaller, but requires the [.NET Desktop Runtime 8 (x64)](https://dotnet.microsoft.com/download/dotnet/8.0) to be installed (setup checks for it and offers the download page if it's missing)
 2. Run it (a per-user install - no administrator prompt).
 3. Tick **Start with Windows** when asked so Win+. works after every sign-in.
 

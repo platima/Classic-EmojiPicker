@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased - v0.1.4]
+
+### Fixed
+- **~150 MB idle memory** - the resident process now compacts the GC heap and empties its working set after startup and whenever the picker hides, and the runtime is tuned for a small heap (`System.GC.ConserveMemory`, non-concurrent GC). Idle-in-tray footprint dropped from ~150 MB to ~20 MB, with no measurable cost to open speed (~35 ms)
+- **App metadata said "Windows 10 Emoji Picker"** - the assembly title/description now use the product's own name, "Classic Emoji Picker" (Windows 10 is a Microsoft trademark)
+
+### Added
+- **Lite installer and zip** (`EmojiPicker-Setup-<version>-lite.exe`, `...-lite.zip`) - a framework-dependent build a fraction of the size of the self-contained one. It requires the [.NET Desktop Runtime 8 (x64)](https://dotnet.microsoft.com/download/dotnet/8.0); the lite installer detects a missing runtime and offers to open the download page
+
 ## [v0.1.3] - 2026-07-10
 
 ### Fixed
