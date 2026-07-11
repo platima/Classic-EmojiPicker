@@ -53,8 +53,34 @@ This version includes core functionality and is ready for daily use:
 1. Download an installer from the [Releases](../../releases) page:
    - `EmojiPicker-Setup-<version>.exe` - **full**: includes the .NET runtime, needs nothing else (larger download)
    - `EmojiPicker-Setup-<version>-lite.exe` - **lite**: much smaller, but requires the [.NET Desktop Runtime 8 (x64)](https://dotnet.microsoft.com/download/dotnet/8.0) to be installed (setup checks for it and offers the download page if it's missing)
-2. Run it (a per-user install - no administrator prompt).
+   - `ClassicEmojiPicker-<version>-win-x64.msi` - **MSI**: self-contained, installs per-machine; made for silent/enterprise deployment (see below)
+2. Run it. The Setup.exe installers ask whether to install for **all users** (elevates, installs to Program Files) or **just you** (no administrator prompt).
 3. Tick **Start with Windows** when asked so Win+. works after every sign-in.
+
+<details>
+<summary><strong>Silent / scripted installs</strong></summary>
+
+Setup.exe (Inno Setup):
+
+```powershell
+# Per-user, silent, with start-with-Windows:
+EmojiPicker-Setup-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /TASKS=startup
+
+# All users (run from an elevated shell for unattended use):
+EmojiPicker-Setup-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES /ALLUSERS /TASKS=startup
+```
+
+MSI (per-machine; ideal for Intune/GPO/scripts):
+
+```powershell
+msiexec /i ClassicEmojiPicker-<version>-win-x64.msi /qn            # install + start-with-Windows
+msiexec /i ClassicEmojiPicker-<version>-win-x64.msi /qn AUTOSTART=0  # without the Run key
+msiexec /x ClassicEmojiPicker-<version>-win-x64.msi /qn            # uninstall
+```
+
+Note: in an all-users/MSI install, autostart lives in HKLM. The tray icon's "Start with Windows" toggle manages a per-user (HKCU) entry independently; if both are set the second startup is a no-op (single-instance).
+
+</details>
 
 Classic Emoji Picker then lives in the system tray. Press **Win+.** anywhere to open it. Right-click the tray icon for **Open Emoji Picker**, a **Start with Windows** toggle, a **Debug logging** toggle (writes a diagnostic log to `%APPDATA%\ClassicEmojiPicker\debug.log` if you ever need to troubleshoot), and **Exit**.
 

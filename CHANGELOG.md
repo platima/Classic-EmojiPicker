@@ -5,7 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased - v0.1.4]
+## [Unreleased - v0.1.5]
+
+### Added
+- **MSI installer** (`ClassicEmojiPicker-<version>-win-x64.msi`) - self-contained, per-machine, built with WiX for silent/enterprise deployment: `msiexec /i <file> /qn` (add `AUTOSTART=0` to skip the start-with-Windows Run key). Upgrades and uninstalls terminate the running tray app automatically
+- **Install for all users** - the Setup.exe installers now ask whether to install for all users (elevates, Program Files, HKLM Run key) or just the current user (unchanged default); `/ALLUSERS` and `/CURRENTUSER` select the mode in silent installs. Setup warns when the other mode's copy is already installed, and an all-users uninstall also cleans up the uninstalling user's leftover per-user Run value
+
+### Changed
+- **Category tabs fill the strip** - the seven bottom tabs now share the full width evenly (previously packed left with dead space) with ~15% larger icons, so they read as category buttons rather than more emoji
+
+## [v0.1.4] - 2026-07-11
 
 ### Fixed
 - **~150 MB idle memory** - the resident process now compacts the GC heap and empties its working set after startup and whenever the picker hides, and the runtime is tuned for a small heap (`System.GC.ConserveMemory`, non-concurrent GC). Idle-in-tray footprint dropped from ~150 MB to ~20 MB, with no measurable cost to open speed (~35 ms)

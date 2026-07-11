@@ -22,10 +22,10 @@
     <AssemblyDescription>Lightweight classic-style emoji picker for Windows</AssemblyDescription>
     <AssemblyProduct>Classic Emoji Picker</AssemblyProduct>
     <AssemblyCopyright>Copyright © Platima 2025-2026</AssemblyCopyright>
-    <AssemblyVersion>0.1.4.0</AssemblyVersion>
-    <FileVersion>0.1.4.0</FileVersion>
-    <Version>0.1.4</Version>
-    <InformationalVersion>0.1.4</InformationalVersion>
+    <AssemblyVersion>0.1.5.0</AssemblyVersion>
+    <FileVersion>0.1.5.0</FileVersion>
+    <Version>0.1.5</Version>
+    <InformationalVersion>0.1.5</InformationalVersion>
   </PropertyGroup>
 
   <!-- WinForms is only used for the tray icon (App.xaml.cs imports it explicitly);

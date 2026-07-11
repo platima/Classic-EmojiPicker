@@ -54,33 +54,58 @@ jobs:
           installer/EmojiPicker.iss
       shell: pwsh
 
+    - name: Install WiX
+      run: |
+        dotnet tool install --global wix --version 6.0.2
+        wix extension add --global WixToolset.UI.wixext/6.0.2
+        wix extension add --global WixToolset.Util.wixext/6.0.2
+
+    - name: Build MSI
+      shell: pwsh
+      run: |
+        $version = "${{ github.ref_name }}".TrimStart('v')
+        # MSI ProductVersion must be numeric a.b.c; a prerelease suffix (e.g.
+        # -rc1) is stripped, so a later final tag upgrades via
+        # AllowSameVersionUpgrades in Package.wxs
+        $msiVersion = ($version -split '-')[0]
+        wix build installer/msi/Package.wxs `
+          -arch x64 `
+          -d Version=$msiVersion `
+          -d "PublishDir=$(Resolve-Path ./publish)" `
+          -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
+          -o ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.msi
+
     - name: Create Release
       uses: softprops/action-gh-release@v3
       with:
         files: |
           ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
           ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64-lite.zip
+          ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.msi
           ./installer/output/EmojiPicker-Setup-*.exe
         name: Classic Emoji Picker ${{ github.ref_name }}
         body: |
           ## Classic Emoji Picker ${{ github.ref_name }}
 
-          **Recommended:** download `EmojiPicker-Setup-<version>.exe` and run it (per-user, no admin).
+          **Recommended:** download `EmojiPicker-Setup-<version>.exe` and run it.
+          It asks whether to install for all users or just you (per-user needs no admin).
           Tick "Start with Windows" so **Win+.** opens this picker after every sign-in.
 
           | Download | Size | Needs |
           |---|---|---|
           | `EmojiPicker-Setup-<version>.exe` | larger | nothing - runtime included |
           | `EmojiPicker-Setup-<version>-lite.exe` | small | [.NET Desktop Runtime 8 (x64)](https://dotnet.microsoft.com/download/dotnet/8.0) - setup checks and links it if missing |
+          | `ClassicEmojiPicker-<version>-win-x64.msi` | larger | nothing - per-machine, for silent/enterprise deploys: `msiexec /i <file> /qn` (add `AUTOSTART=0` to skip the Run key) |
 
           The `.zip` files are the same two builds in portable form - extract and run `EmojiPicker.exe`.
+          Silent Setup.exe installs: `/VERYSILENT /SUPPRESSMSGBOXES /ALLUSERS|/CURRENTUSER /TASKS=startup`.
 
           ### What's New
           See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
 
           ### Requirements
           - Windows 11 or Windows 10 (version 1809+)
-          - Full installer/zip: no additional dependencies; lite: .NET Desktop Runtime 8 (x64)
+          - Full installer/zip and MSI: no additional dependencies; lite: .NET Desktop Runtime 8 (x64)
         draft: false
         prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
       env:

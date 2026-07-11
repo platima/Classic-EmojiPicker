@@ -35,9 +35,9 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0,0,0,2"
-                                Padding="13,8">
+                                Padding="0,8">
                             <Image emoji:Image.Source="{Binding Icon}"
-                                   Width="20" Height="20"
+                                   Width="23" Height="23"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
                         </Border>
@@ -209,12 +209,16 @@
                          BorderThickness="0"
                          Focusable="False"
                          HorizontalAlignment="Stretch"
+                         Padding="0"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
                          ItemContainerStyle="{StaticResource TabItemStyle}"
                          SelectionChanged="CategoryTabs_SelectionChanged">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
+                            <!-- One row, evenly divided: the 7 category tabs fill
+                                 the full strip width instead of packing left -->
+                            <UniformGrid Rows="1"/>
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                 </ListBox>

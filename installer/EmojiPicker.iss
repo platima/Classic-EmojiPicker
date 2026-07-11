@@ -3,11 +3,18 @@
 ; Two variants share this script:
 ;   Full (default) - expects a self-contained publish (dotnet publish -r win-x64
 ;     --self-contained true); end users need nothing extra installed.
-;     ISCC.exe /DAppVersion=0.1.4 /DPublishDir=<publish> installer\EmojiPicker.iss
+;     ISCC.exe /DAppVersion=0.1.5 /DPublishDir=<publish> installer\EmojiPicker.iss
 ;   Lite - expects a framework-dependent publish (--self-contained false), a much
 ;     smaller download that requires the .NET Desktop Runtime 8 (x64). Setup checks
 ;     for the runtime and points at the download page when it is missing.
-;     ISCC.exe /DAppVersion=0.1.4 /DPublishDir=<publish-fd> /DFrameworkDependent=1 installer\EmojiPicker.iss
+;     ISCC.exe /DAppVersion=0.1.5 /DPublishDir=<publish-fd> /DFrameworkDependent=1 installer\EmojiPicker.iss
+;
+; Install modes: per-user is the default (no UAC). A startup dialog offers
+; "install for all users" (elevates, installs to Program Files, HKLM Run key).
+; Command line for silent installs:
+;   per-user:  EmojiPicker-Setup-x.y.z.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /TASKS=startup
+;   all-users: EmojiPicker-Setup-x.y.z.exe /VERYSILENT /SUPPRESSMSGBOXES /ALLUSERS /TASKS=startup
+;     (run from an elevated shell for unattended use; otherwise UAC prompts)
 
 #ifndef AppVersion
   #define AppVersion "0.1.4"
@@ -41,8 +48,10 @@ OutputBaseFilename=EmojiPicker-Setup-{#AppVersion}
 #endif
 Compression=lzma2
 SolidCompression=yes
-; Per-user install: no UAC prompt, and lets us write the HKCU Run key
+; Per-user by default (no UAC); the dialog/command line can elevate to an
+; all-users install (Program Files + HKLM Run key)
 PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog commandline
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
@@ -61,8 +70,12 @@ Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExe}"
 Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 
 [Registry]
-; Start with Windows (per-user). Mirrors the tray "Start with Windows" toggle.
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
+; Start with Windows. HKA resolves to HKLM in an all-users install (starts for
+; every user) and HKCU per-user (same value the tray "Start with Windows"
+; toggle manages). Note: in an all-users install the tray toggle still writes
+; HKCU, so both values can exist; the single-instance mutex makes the second
+; logon start a no-op.
+Root: HKA; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
     ValueType: string; ValueName: "ClassicEmojiPicker"; ValueData: """{app}\{#AppExe}"""; \
     Tasks: startup; Flags: uninsdeletevalue
 
@@ -73,8 +86,14 @@ Filename: "{app}\{#AppExe}"; Description: "Launch Classic Emoji Picker now"; Fla
 ; Stop the resident app before removing files so the exe isn't locked
 Filename: "{cmd}"; Parameters: "/C taskkill /IM {#AppExe} /F"; Flags: runhidden; RunOnceId: "StopEmojiPicker"
 
-#ifdef FrameworkDependent
 [Code]
+const
+  // Inno's uninstall registration for this AppId (per mode: HKLM for
+  // all-users, HKCU for per-user)
+  UninstallRegKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{B6C3E1A2-7F4D-4C9E-9B21-1E2A3C4D5E6F}_is1';
+  RunRegKey = 'Software\Microsoft\Windows\CurrentVersion\Run';
+
+#ifdef FrameworkDependent
 const
   RuntimeDownloadUrl = 'https://dotnet.microsoft.com/download/dotnet/8.0';
 
@@ -112,12 +131,17 @@ begin
     end;
   end;
 end;
+#endif
 
 function InitializeSetup(): Boolean;
+#ifdef FrameworkDependent
 var
   ErrorCode: Integer;
+#endif
 begin
   Result := True;
+
+#ifdef FrameworkDependent
   if not IsDesktopRuntime8Installed() then
   begin
     if MsgBox('This lite installer requires the .NET Desktop Runtime 8 (x64), '
@@ -131,6 +155,44 @@ begin
       ShellExec('open', RuntimeDownloadUrl, '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
     end;
     Result := False;
+    exit;
+  end;
+#endif
+
+  // The two install modes register independently (HKLM vs HKCU), so both can
+  // end up installed at once. Warn interactively; silent installs proceed.
+  if not WizardSilent then
+  begin
+    if IsAdminInstallMode and RegKeyExists(HKCU, UninstallRegKey) then
+    begin
+      if MsgBox('Classic Emoji Picker is already installed for the current user. '
+        + 'Installing for all users as well would leave two copies.' #13#10 #13#10
+        + 'Continue anyway? (Consider uninstalling the per-user copy first.)',
+        mbConfirmation, MB_YESNO) = IDNO then
+      begin
+        Result := False;
+      end;
+    end
+    else if (not IsAdminInstallMode) and RegKeyExists(HKLM, UninstallRegKey) then
+    begin
+      if MsgBox('Classic Emoji Picker is already installed for all users. '
+        + 'Installing for the current user as well would leave two copies.' #13#10 #13#10
+        + 'Continue anyway? (Consider uninstalling the all-users copy first.)',
+        mbConfirmation, MB_YESNO) = IDNO then
+      begin
+        Result := False;
+      end;
+    end;
   end;
 end;
-#endif
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  // An all-users uninstall removes the HKLM Run value via the uninstall log,
+  // but any HKCU value the tray "Start with Windows" toggle created would be
+  // left stale (pointing at a deleted exe) - clean up this user's copy too
+  if (CurUninstallStep = usPostUninstall) and IsAdminInstallMode then
+  begin
+    RegDeleteValue(HKCU, RunRegKey, 'ClassicEmojiPicker');
+  end;
+end;
