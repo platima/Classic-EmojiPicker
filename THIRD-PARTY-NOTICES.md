@@ -13,6 +13,15 @@ licence, reproduced or linked below.
 - **Licence:** MIT — https://github.com/milesj/emojibase/blob/master/LICENSE
 - **Project:** https://github.com/milesj/emojibase
 
+### Unicode emoji frequency data
+- **Used for:** the search-result popularity ordering in
+  `EmojiPicker/Resources/popularity.json`, parsed from Unicode's published
+  emoji-frequency tiers and supplemented with popular post-2018 emoji absent
+  from that dataset.
+- **Author:** Unicode, Inc.
+- **Licence:** Unicode License — https://www.unicode.org/license.txt
+- **Source:** https://home.unicode.org/emoji/emoji-frequency/
+
 ## NuGet package dependencies
 
 These are restored at build time and bundled into the published executable.

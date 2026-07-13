@@ -117,6 +117,11 @@ The picker hides after inserting an emoji (or when it loses focus, or on ESC) an
 
 The app installs a low-level keyboard hook that catches Win+. before the Windows shell does, opens this picker, and swallows the keystroke so the built-in panel doesn't also appear. This means the app must be running (it sits in the tray) for the shortcut to work - the installer's **Start with Windows** option keeps it available after every sign-in.
 
+### Known limitations
+
+- **Elevated (run-as-administrator) apps**: Windows does not deliver keystrokes destined for elevated windows to a non-elevated hook, so pressing Win+. inside an elevated app opens the **built-in** Windows panel instead of this picker. Similarly, emoji can't be typed into an elevated window from here - picking one for an elevated target copies it to the clipboard instead. (Fixing this would require running the picker elevated or shipping a signed UIAccess binary - both worse trades than the limitation.)
+- **Caret anchoring** relies on the target app exposing a system caret; apps that don't (some frameworks) fall back to opening at the mouse pointer.
+
 ## Emoji Rendering
 
 Colour emoji rendering is handled by the [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) library, which uses the system's Segoe UI Emoji font (present on all supported versions of Windows). No bundled fonts are required.

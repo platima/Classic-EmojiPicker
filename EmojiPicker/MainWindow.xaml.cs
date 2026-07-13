@@ -82,9 +82,15 @@ namespace EmojiPicker
             CategoryTabs.SelectedIndex = Categories.FindIndex(category => category.Key == currentCategory);
         }
 
-        // Columns currently shown by the virtualizing wrap panel, derived from the
-        // realized top row so Up/Down move exactly one visual row regardless of
-        // width, DPI, or scrollbar. Falls back to a width estimate before layout.
+        // The items panel hosting the emoji cells; cached after the first lookup.
+        // Its ActualWidth is the viewport content width (scrollbar excluded),
+        // which is stable regardless of scroll position or container recycling.
+        private WpfToolkit.Controls.VirtualizingWrapPanel? emojiPanel;
+
+        // Columns currently shown by the virtualizing wrap panel, derived from
+        // the panel's width so Up/Down move exactly one visual row. Geometry of
+        // realized containers is NOT used: recycled containers report garbage
+        // positions once the grid has scrolled, which broke row navigation.
         private int ColumnsPerRow
         {
             get
@@ -94,47 +100,35 @@ namespace EmojiPicker
                     return 1;
                 }
 
-                // Scan from the first *realized* container (when scrolled deep,
-                // index 0 is virtualized away) and count how many share its row
-                var firstRealized = -1;
-                for (var i = 0; i < EmojiGrid.Items.Count; i++)
+                emojiPanel ??= FindVisualChild<WpfToolkit.Controls.VirtualizingWrapPanel>(EmojiGrid);
+                if (emojiPanel != null && emojiPanel.ActualWidth > 0)
                 {
-                    if (EmojiGrid.ItemContainerGenerator.ContainerFromIndex(i) is UIElement)
-                    {
-                        firstRealized = i;
-                        break;
-                    }
+                    return Math.Max(1, (int)(emojiPanel.ActualWidth / ItemCellWidth));
                 }
 
-                if (firstRealized < 0)
-                {
-                    // Nothing realized yet: estimate from the width, allowing for
-                    // the 10px themed scrollbar (or the estimate lands one high)
-                    return Math.Max(1, (int)((EmojiGrid.ActualWidth - 12) / ItemCellWidth));
-                }
-
-                var first = (UIElement)EmojiGrid.ItemContainerGenerator.ContainerFromIndex(firstRealized);
-                var topY = first.TranslatePoint(new System.Windows.Point(0, 0), EmojiGrid).Y;
-                var columns = 0;
-                for (var i = firstRealized; i < EmojiGrid.Items.Count; i++)
-                {
-                    // Rows are realized whole; stop once we leave the first
-                    // realized row (or hit a virtualized item further down)
-                    if (EmojiGrid.ItemContainerGenerator.ContainerFromIndex(i) is not UIElement cell)
-                    {
-                        break;
-                    }
-
-                    if (Math.Abs(cell.TranslatePoint(new System.Windows.Point(0, 0), EmojiGrid).Y - topY) > 1)
-                    {
-                        break;
-                    }
-
-                    columns++;
-                }
-
-                return Math.Max(1, columns);
+                // Before first layout: estimate from the ListBox width, allowing
+                // for the 10px themed scrollbar (or the estimate lands one high)
+                return Math.Max(1, (int)((EmojiGrid.ActualWidth - 12) / ItemCellWidth));
             }
+        }
+
+        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T match)
+                {
+                    return match;
+                }
+
+                if (FindVisualChild<T>(child) is T nested)
+                {
+                    return nested;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -348,11 +342,16 @@ namespace EmojiPicker
             }
         }
 
+        // Popularity tier assigned to emoji absent from the frequency data
+        // (rarely used, or newer than the dataset and not in its supplement)
+        private const int UnrankedPopularity = 99;
+
         private void InitializeEmojis()
         {
             // Build the full emoji set from the Unicode database that ships
             // inside Emoji.Wpf, mapped onto the Windows 10 categories
-            var keywords = LoadKeywords();
+            var keywords = LoadResourceMap<string>("keywords.json");
+            var popularity = LoadResourceMap<int>("popularity.json");
             allEmojis = new List<Emoji>();
             foreach (var group in WpfEmojiData.AllGroups)
             {
@@ -370,8 +369,10 @@ namespace EmojiPicker
                     {
                         if (emoji.Renderable)
                         {
-                            keywords.TryGetValue(NormalizeEmoji(emoji.Text), out var tags);
-                            allEmojis.Add(new Emoji(emoji.Text, emoji.Name, key, tags ?? string.Empty));
+                            var normalized = NormalizeEmoji(emoji.Text);
+                            keywords.TryGetValue(normalized, out var tags);
+                            var rank = popularity.TryGetValue(normalized, out var tier) ? tier : UnrankedPopularity;
+                            allEmojis.Add(new Emoji(emoji.Text, emoji.Name, key, tags ?? string.Empty, rank));
                         }
                     }
                 }
@@ -382,15 +383,15 @@ namespace EmojiPicker
         // strip it so lookups line up
         private static string NormalizeEmoji(string text) => text.Replace("\uFE0F", string.Empty);
 
-        private static Dictionary<string, string> LoadKeywords()
+        private static Dictionary<string, T> LoadResourceMap<T>(string fileName)
         {
             try
             {
-                var uri = new Uri("pack://application:,,,/Resources/keywords.json");
+                var uri = new Uri($"pack://application:,,,/Resources/{fileName}");
                 using var stream = Application.GetResourceStream(uri)?.Stream;
                 if (stream != null)
                 {
-                    var map = JsonSerializer.Deserialize<Dictionary<string, string>>(stream);
+                    var map = JsonSerializer.Deserialize<Dictionary<string, T>>(stream);
                     if (map != null)
                     {
                         return map;
@@ -399,10 +400,10 @@ namespace EmojiPicker
             }
             catch (Exception)
             {
-                // Search still works on names if the keyword data can't be loaded
+                // Search still works (on names, in category order) without the data
             }
 
-            return new Dictionary<string, string>();
+            return new Dictionary<string, T>();
         }
 
         private void LoadCategory(string categoryKey)
@@ -506,29 +507,64 @@ namespace EmojiPicker
                 return;
             }
 
-            // Rank name matches ahead of keyword-only matches so an incidental tag
-            // (e.g. heart decoration's "white" tag for "whi") never outranks the
-            // emoji whose name actually contains the query
-            var nameMatches = new List<Emoji>();
-            var keywordMatches = new List<Emoji>();
-            foreach (var emoji in allEmojis)
+            // Rank matches by quality, then by real-world usage:
+            //  - word-start matches (name or keyword) come before mid-word ones
+            //  - within that, order by Unicode usage-frequency tier, with
+            //    keyword-only matches handicapped one tier so a hidden tag needs
+            //    to be genuinely more popular to outrank a visible name match
+            //    (e.g. "spl": 💦's "splash" keyword beats 🖐️ "…fingers splayed",
+            //    but "whi": ⚪ "white circle" still beats 💟's "white" tag)
+            var scored = new List<(Emoji Emoji, int Tier, int Score, bool IsName, int Index)>();
+            for (var i = 0; i < allEmojis.Count; i++)
             {
-                if (emoji.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                var emoji = allEmojis[i];
+                var nameWordStart = HasWordStartMatch(emoji.Name, searchText);
+                var keywordWordStart = HasWordStartMatch(emoji.Keywords, searchText);
+                var nameContains = nameWordStart || emoji.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+                var keywordContains = keywordWordStart || emoji.Keywords.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+
+                if (!nameContains && !keywordContains)
                 {
-                    nameMatches.Add(emoji);
+                    continue;
                 }
-                else if (emoji.Keywords.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                {
-                    keywordMatches.Add(emoji);
-                }
+
+                var tier = nameWordStart || keywordWordStart ? 0 : 1;
+                var isName = tier == 0 ? nameWordStart : nameContains;
+                var score = emoji.Popularity + (isName ? 0 : 1);
+                scored.Add((emoji, tier, score, isName, i));
             }
 
-            var filteredEmojis = nameMatches;
-            filteredEmojis.AddRange(keywordMatches);
+            var filteredEmojis = scored
+                .OrderBy(match => match.Tier)
+                .ThenBy(match => match.Score)
+                .ThenByDescending(match => match.IsName)
+                .ThenBy(match => match.Index)
+                .Select(match => match.Emoji)
+                .ToList();
 
-            Logger.Log($"Search '{searchText}' -> {nameMatches.Count} name + {keywordMatches.Count} keyword");
+            Logger.Log($"Search '{searchText}' -> {scored.Count(match => match.Tier == 0)} word-start + " +
+                $"{scored.Count(match => match.Tier == 1)} substring; top: " +
+                string.Join(", ", filteredEmojis.Take(3).Select(emoji => emoji.Name)));
             CategoryHeader.Text = SearchHeader;
             ShowEmojis(filteredEmojis);
+        }
+
+        // True when the query appears at the start of any word (words separated
+        // by spaces or hyphens, as in Unicode names and emojibase tags)
+        private static bool HasWordStartMatch(string text, string query)
+        {
+            var index = text.IndexOf(query, StringComparison.OrdinalIgnoreCase);
+            while (index >= 0)
+            {
+                if (index == 0 || text[index - 1] == ' ' || text[index - 1] == '-')
+                {
+                    return true;
+                }
+
+                index = text.IndexOf(query, index + 1, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return false;
         }
 
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -595,6 +631,7 @@ namespace EmojiPicker
             var index = EmojiGrid.SelectedIndex < 0 ? 0 : EmojiGrid.SelectedIndex + delta;
             EmojiGrid.SelectedIndex = Math.Clamp(index, 0, EmojiGrid.Items.Count - 1);
             EmojiGrid.ScrollIntoView(EmojiGrid.SelectedItem);
+            Logger.Log($"MoveSelection delta={delta} (columns={ColumnsPerRow}) -> index {EmojiGrid.SelectedIndex}");
         }
 
         private void CommitSelectedEmoji()
@@ -801,13 +838,21 @@ namespace EmojiPicker
         /// <summary>Extra search terms (emojibase tags), e.g. "splash" for 💦.</summary>
         public string Keywords { get; }
 
-        public Emoji(string character, string name, string category, string keywords)
+        /// <summary>Usage-popularity tier from Unicode's frequency data
+        /// (0 = most used); unranked emoji get a large sentinel value.</summary>
+        public int Popularity { get; }
+
+        public Emoji(string character, string name, string category, string keywords, int popularity)
         {
             Character = character;
             Name = name;
             Category = category;
             Keywords = keywords;
+            Popularity = popularity;
         }
+
+        // Shown by UI Automation / screen readers for the grid items
+        public override string ToString() => Name;
     }
 
     public class EmojiCategory

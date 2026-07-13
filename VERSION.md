@@ -30,6 +30,7 @@
 - No skin-tone modifiers yet
 - The Win+. hook requires the app to be running (tray)
 - Caret anchoring relies on the target app exposing a system caret; apps that don't fall back to the mouse pointer
+- Elevated (run-as-administrator) apps: Windows blocks non-elevated hooks from elevated input, so Win+. there opens the built-in panel, and picks targeting an elevated window land on the clipboard
 
 ### Next Release
 - **Target**: v0.1.5

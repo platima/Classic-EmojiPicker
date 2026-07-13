@@ -102,10 +102,19 @@ namespace EmojiPicker
             // moves focus off edits like Explorer's Search box or address bar
             RestoreFocus(targetWindow, focusWindow);
 
-            // Give the target window a moment to take keyboard focus before typing.
-            // Awaited (not slept) so the UI thread keeps pumping; the continuation
-            // resumes on the dispatcher via its synchronization context.
-            await Task.Delay(250);
+            // Wait for the target to actually become foreground before typing -
+            // usually one or two ticks - rather than a fixed worst-case delay.
+            // Awaited (not slept) so the UI thread keeps pumping.
+            var waited = 0;
+            while (waited < 250 && NativeMethods.GetForegroundWindow() != targetWindow)
+            {
+                await Task.Delay(15);
+                waited += 15;
+            }
+
+            // One extra tick for keyboard focus to settle inside the window
+            await Task.Delay(15);
+            Logger.Log($"Insert: target foreground after ~{waited}ms");
 
             if (!NativeMethods.IsWindow(targetWindow))
             {
