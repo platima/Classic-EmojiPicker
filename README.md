@@ -13,7 +13,7 @@ A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 
   <img src="Screenshot.png" alt="Classic Emoji Picker in dark mode showing the Smiley faces and animals category, with the search box, emoji grid, and category tabs" width="360">
 </p>
 
-## ✅ Current Status: v0.1.4 - Working Release
+## ✅ Current Status: v0.1.5 - Working Release
 
 This version includes core functionality and is ready for daily use:
 

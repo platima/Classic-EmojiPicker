@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased - v0.1.5]
+## [v0.1.5] - 2026-07-13
 
 ### Fixed (post-verification)
 - **Search coverage now matches Windows 10's associations** - community keyword data from [emojilib](https://github.com/muan/emojilib) (MIT) is merged into the bundled keywords, so colloquial searches like "laugh" now find 😅 (previously only the emoji whose formal tags mentioned it). Windows' own keyword data is proprietary and can't be redistributed; emojilib provides the equivalent coverage

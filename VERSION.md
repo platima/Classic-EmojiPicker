@@ -1,25 +1,26 @@
 # Version Information
 
-## Current Version: v0.1.4
+## Current Version: v0.1.5
 
-**Release Date**: 2026-07-11
+**Release Date**: 2026-07-13
 **Build**: Release
 **Target Framework**: .NET 8.0-windows
 **Architecture**: x64 (self-contained; a framework-dependent "lite" build is also published)
 
 ### Version Details
-- **Assembly Version**: 0.1.4.0
-- **File Version**: 0.1.4.0
-- **Product Version**: 0.1.4
-- **Informational Version**: 0.1.4
+- **Assembly Version**: 0.1.5.0
+- **File Version**: 0.1.5.0
+- **Product Version**: 0.1.5
+- **Informational Version**: 0.1.5
 
 ### Release Notes
-- Idle-in-tray memory cut from ~150 MB to ~20 MB (GC heap compaction + working-set trim after startup and whenever the picker hides)
-- App metadata renamed to "Classic Emoji Picker" (no Microsoft trademark in the title)
-- New lite installer/zip: framework-dependent (~2 MB app payload), requires the .NET Desktop Runtime 8 (x64); setup detects a missing runtime and offers the download page
-- Opens where you're typing: anchors to the text caret (mouse-pointer fallback), opening above it when there's no room below
-- Search by name or keyword (e.g. "splash" finds 💦), with name matches ranked ahead of keyword-only matches
-- Debug logging toggled from the tray menu's "Debug logging" item
+- New MSI installer (per-machine, silent/enterprise: `msiexec /i <file> /qn`) alongside the Setup.exe installers, which now offer install-for-all-users as well as per-user
+- Search is popularity-aware (Unicode frequency data) with Windows 10-style keyword associations (emojilib): "laugh" finds 😅, "spl" puts 💦 first
+- Win+. toggles the picker closed when it is already open; releasing Win no longer opens the Start menu
+- Inserts feel immediate (foreground readiness is polled instead of a fixed 250 ms wait); elevated targets fall back to the clipboard
+- Esc clears an active search first, closes on the second press; arrow-key navigation fixed after deep scrolling
+- The seven category tabs fill the strip evenly with larger icons
+- 19 code-review fixes across robustness, shutdown, logging (5 MB rotation), and cleanup
 
 ### Compatibility
 - **OS**: Windows 11, Windows 10 (version 1809+)
