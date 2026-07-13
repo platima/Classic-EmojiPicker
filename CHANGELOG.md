@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased - v0.1.5]
 
 ### Fixed (post-verification)
+- **Search coverage now matches Windows 10's associations** - community keyword data from [emojilib](https://github.com/muan/emojilib) (MIT) is merged into the bundled keywords, so colloquial searches like "laugh" now find 😅 (previously only the emoji whose formal tags mentioned it). Windows' own keyword data is proprietary and can't be redistributed; emojilib provides the equivalent coverage
 - **Perceptible pause between Enter and the emoji appearing** - insertion now polls for the target window to actually take foreground (typically ~30-60 ms) instead of always waiting a fixed 250 ms
 - **Search ranking is now popularity-aware** - results are ordered by match quality (word-start before mid-word) and then by Unicode's published emoji usage-frequency tiers (bundled as `Resources/popularity.json`, supplemented with popular post-2018 emoji missing from that dataset). Keyword-only matches carry a one-tier handicap so a hidden tag must be genuinely more popular to outrank a visible name match - "spl" now puts 💦 (splash) above 🖐️ ("hand with fingers *spl*ayed"), while "whi" still ranks white-named emoji above heart decoration's "white" tag
 - **Down/Up arrow navigation broke after scrolling** (regression from the review fixes) - the grid's column count is now derived from the wrap panel's width instead of realized-container geometry, which recycling invalidates

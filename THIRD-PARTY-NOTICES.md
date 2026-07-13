@@ -7,11 +7,20 @@ licence, reproduced or linked below.
 ## Bundled data
 
 ### emojibase
-- **Used for:** the search keyword/tag data in `EmojiPicker/Resources/keywords.json`,
-  generated from emojibase's annotations (which derive from Unicode CLDR).
+- **Used for:** the search keyword/tag data in `EmojiPicker/Resources/keywords.json`
+  (merged with emojilib, below), generated from emojibase's annotations
+  (which derive from Unicode CLDR).
 - **Author:** Miles Johnson and contributors
 - **Licence:** MIT — https://github.com/milesj/emojibase/blob/master/LICENSE
 - **Project:** https://github.com/milesj/emojibase
+
+### emojilib
+- **Used for:** community keyword associations merged into
+  `EmojiPicker/Resources/keywords.json` (e.g. "laugh" for 😅), giving search
+  coverage similar to the Windows 10 panel.
+- **Author:** Mu-An Chiou and contributors
+- **Licence:** MIT — https://github.com/muan/emojilib/blob/main/LICENSE
+- **Project:** https://github.com/muan/emojilib
 
 ### Unicode emoji frequency data
 - **Used for:** the search-result popularity ordering in

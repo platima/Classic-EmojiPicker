@@ -38,8 +38,9 @@
        in addition to being the executable's icon (ApplicationIcon above) -->
   <ItemGroup>
     <Resource Include="Resources\app.ico" />
-    <!-- Emoji search keywords/tags keyed by emoji; generated from emojibase
-         (MIT), whose annotations derive from Unicode CLDR -->
+    <!-- Emoji search keywords/tags keyed by emoji; union of emojibase (MIT,
+         annotations derived from Unicode CLDR) and emojilib (MIT, community
+         associations like "laugh" for 😅, similar to the Windows 10 panel) -->
     <Resource Include="Resources\keywords.json" />
     <!-- Usage-popularity tier (0 = most used) keyed by emoji; parsed from
          Unicode's published emoji-frequency data
