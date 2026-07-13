@@ -26,7 +26,7 @@
 4. **Build the installer** (requires [Inno Setup 6](https://jrsoftware.org/isdl.php)):
    ```powershell
    dotnet publish EmojiPicker/EmojiPicker.csproj -c Release -r win-x64 --self-contained true -o ./publish
-   ISCC.exe /DAppVersion=0.1.3 "/DPublishDir=$(Resolve-Path ./publish)" installer/EmojiPicker.iss
+   ISCC.exe /DAppVersion=0.1.5 "/DPublishDir=$(Resolve-Path ./publish)" installer/EmojiPicker.iss
    ```
    The release GitHub Actions workflow does this automatically for tagged builds.
 
@@ -100,16 +100,20 @@ dotnet format --verify-no-changes
 #### **Manual Testing Checklist**
 - [ ] App starts to the tray with no visible window
 - [ ] **Win+.** opens the picker at the text caret (mouse-pointer fallback) and the built-in Windows panel does NOT appear
+- [ ] **Win+.** while the picker is open closes it (toggle); releasing Win alone afterwards does NOT open the Start menu
 - [ ] Search box is focused on open; typing filters immediately
 - [ ] All seven category tabs work (click and Tab/Shift+Tab) and show populated grids
-- [ ] Arrow keys move the selection; Enter inserts the highlighted emoji into the app you came from
-- [ ] Search matches by keyword too (e.g. "splash" finds 💦), with name matches ranked first
-- [ ] Clipboard fallback works when there is no target window
-- [ ] Picker hides after selection, on focus loss, and on ESC (process stays in the tray)
+- [ ] Arrow keys move the selection one cell/row - including after scrolling deep into a category; Enter inserts the highlighted emoji into the app you came from with no perceptible pause
+- [ ] Search ranking: "spl" puts 💦 first, "whi" puts 🤍 first, "laugh" includes 😅, "rofl" finds 🤣/😂
+- [ ] ESC clears an active search first; second ESC closes
+- [ ] Clipboard fallback works when there is no target window (e.g. opening from the tray menu), and for elevated target windows
+- [ ] Picker hides after selection and on focus loss (process stays in the tray)
 - [ ] Recent emojis persist across restarts
 - [ ] Dark/light: switch the Windows theme and confirm the picker recolours (live)
-- [ ] Tray menu: Open, Start with Windows (toggles the HKCU Run key), Exit
+- [ ] Tray menu: Open Emoji Picker, Start with Windows (toggles the HKCU Run key; shows read-only when an all-users install manages HKLM), Debug logging, Exit
+- [ ] Autostart at sign-in starts to the tray WITHOUT popping the picker open
 - [ ] After Exit, Win+. reopens the built-in Windows panel
+- [ ] Installers: Setup.exe offers all-users/just-me (and /ALLUSERS /CURRENTUSER silently); MSI installs/uninstalls with msiexec /qn (test in Windows Sandbox or a VM, never over a real install)
 
 > Note: the Win+. hook is global while the app runs. When testing with scripted input, always terminate the process afterward so the hook is removed.
 - [ ] Idle-in-tray memory stays reasonable

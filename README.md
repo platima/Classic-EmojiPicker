@@ -13,7 +13,7 @@ A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 
   <img src="Screenshot.png" alt="Classic Emoji Picker in dark mode showing the Smiley faces and animals category, with the search box, emoji grid, and category tabs" width="360">
 </p>
 
-## ✅ Current Status: v0.1.3 - Working Release
+## ✅ Current Status: v0.1.4 - Working Release
 
 This version includes core functionality and is ready for daily use:
 
@@ -242,7 +242,7 @@ dotnet build --configuration Release
 ### v0.2.0 (Next Release)
 - [x] Add more emoji categories (Animals, Food, Travel, etc.)
 - [x] Expand emoji database with more emojis
-- [ ] Improved error handling and user feedback
+- [x] Improved error handling and user feedback (crash-surviving resident app, opt-in debug logging)
 
 ### v0.3.0 (Future)
 - [x] Global hotkey support (Win+. replacement)
