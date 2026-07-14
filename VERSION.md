@@ -1,6 +1,6 @@
 # Version Information
 
-## Current Version: v0.1.5
+## Current Version: v0.1.6
 
 **Release Date**: 2026-07-13
 **Build**: Release
@@ -8,12 +8,15 @@
 **Architecture**: x64 (self-contained; a framework-dependent "lite" build is also published)
 
 ### Version Details
-- **Assembly Version**: 0.1.5.0
-- **File Version**: 0.1.5.0
-- **Product Version**: 0.1.5
-- **Informational Version**: 0.1.5
+- **Assembly Version**: 0.1.6.0
+- **File Version**: 0.1.6.0
+- **Product Version**: 0.1.6
+- **Informational Version**: 0.1.6
 
 ### Release Notes
+- Emoji cells match the Windows 10 look: larger glyphs (~75% of the cell) and a solid filled selection highlight instead of a border stroke
+
+### Previous Release (v0.1.5)
 - New MSI installer (per-machine, silent/enterprise: `msiexec /i <file> /qn`) alongside the Setup.exe installers, which now offer install-for-all-users as well as per-user
 - Search is popularity-aware (Unicode frequency data) with Windows 10-style keyword associations (emojilib): "laugh" finds 😅, "spl" puts 💦 first
 - Win+. toggles the picker closed when it is already open; releasing Win no longer opens the Start menu

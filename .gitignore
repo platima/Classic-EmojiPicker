@@ -380,3 +380,6 @@ EmojiPicker/Fonts/
 *.user
 *.userosscache
 *.sln.docstates
+ours.png
+w10.png
+.gitignore
