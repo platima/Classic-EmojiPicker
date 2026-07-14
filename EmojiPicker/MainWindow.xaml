@@ -65,15 +65,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
+                        <!-- Windows 10 style: a filled highlight square (no border
+                             stroke), with the glyph filling most of the cell -->
                         <Border x:Name="Root"
                                 Width="40" Height="40"
                                 Margin="1"
                                 Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="2"
-                                CornerRadius="4">
+                                CornerRadius="2">
                             <Image emoji:Image.Source="{Binding Character}"
-                                   Width="28" Height="28"
+                                   Width="32" Height="32"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
                         </Border>
@@ -81,8 +81,9 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Root" Property="Background" Value="{DynamicResource HoverBrush}"/>
                             </Trigger>
+                            <!-- After IsMouseOver so selection wins when both apply -->
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource SelectionBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

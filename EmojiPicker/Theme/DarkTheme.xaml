@@ -15,5 +15,8 @@
     <SolidColorBrush x:Key="ScrollBarBackgroundBrush" Color="#2B2B2B"/>
     <SolidColorBrush x:Key="ScrollBarThumbBrush" Color="#555555"/>
     <SolidColorBrush x:Key="AccentBrush" Color="#0078D4"/>
+    <!-- Filled highlight behind the selected emoji, like the Windows 10 panel
+         (accent blended ~35% over the dark background) -->
+    <SolidColorBrush x:Key="SelectionBrush" Color="#1C4666"/>
 
 </ResourceDictionary>
