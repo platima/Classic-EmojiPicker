@@ -100,6 +100,9 @@ jobs:
           The `.zip` files are the same two builds in portable form - extract and run `EmojiPicker.exe`.
           Silent Setup.exe installs: `/VERYSILENT /SUPPRESSMSGBOXES /ALLUSERS|/CURRENTUSER /TASKS=startup`.
 
+          ### "Windows protected your PC" / SmartScreen
+          These downloads aren't code-signed yet, so Windows may warn about an unrecognised app. Either click **More info -> Run anyway** at the prompt, or right-click the file -> **Properties** -> tick **Unblock** -> **OK** before running. The files are safe; code signing to remove the warning is planned.
+
           ### What's New
           See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
 

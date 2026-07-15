@@ -82,6 +82,12 @@ Note: in an all-users/MSI install, autostart lives in HKLM. The tray icon's "Sta
 
 </details>
 
+> **"Windows protected your PC" / SmartScreen warning?** The downloads aren't code-signed yet, so Windows may warn about an unrecognised app. Two ways past it:
+> - **At the prompt:** click **More info**, then **Run anyway**.
+> - **Before running:** right-click the downloaded file → **Properties** → tick **Unblock** (bottom of the General tab) → **OK**, then run it.
+>
+> The files are safe; this is Windows being cautious about new, unsigned downloads. Code signing is planned to remove the warning.
+
 Classic Emoji Picker then lives in the system tray. Press **Win+.** anywhere to open it. Right-click the tray icon for **Open Emoji Picker**, a **Start with Windows** toggle, a **Debug logging** toggle (writes a diagnostic log to `%APPDATA%\ClassicEmojiPicker\debug.log` if you ever need to troubleshoot), and **Exit**.
 
 > **Restoring the built-in panel:** while Classic Emoji Picker is running it intercepts Win+.. Choose **Exit** from the tray icon (and untick Start with Windows) to hand the shortcut back to Windows.
