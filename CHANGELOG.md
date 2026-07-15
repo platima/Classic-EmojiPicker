@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased - v0.1.7]
+
+### Fixed
+- **Joined emoji split apart in some apps** - emoji like 🤷‍♂️ (a ZWJ sequence), flags, and skin-tone variants are several code points glued together, and typing them as separate synthetic keystrokes made apps like WhatsApp/Discord/Slack show the pieces (and a stray joiner) separately. These are now **pasted** so the target composes them correctly, while simple emoji still type as before
+
+### Added
+- **`settings.json`** (`%APPDATA%\ClassicEmojiPicker\settings.json`, created on first run) with `emojiInsertMode`: `hybrid` (default - type simple, paste joined), `paste` (always clipboard), or `keystroke` (always type, never touch the clipboard). See the README
+
 ## [v0.1.6] - 2026-07-13
 
 ### Changed

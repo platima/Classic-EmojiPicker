@@ -77,6 +77,7 @@ namespace EmojiPicker
             startupUtc = DateTime.UtcNow;
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             Logger.Log($"=== Startup v{version} ===");
+            Settings.Load();
 
             // A resident utility should survive a bad frame: log the exception
             // and keep running rather than take Win+. down until relaunch

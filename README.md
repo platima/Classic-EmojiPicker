@@ -119,6 +119,28 @@ Classic Emoji Picker then lives in the system tray. Press **Win+.** anywhere to 
 
 The picker hides after inserting an emoji (or when it loses focus, or on ESC) and waits in the tray for the next Win+.. Recently used emojis are saved to `%APPDATA%\ClassicEmojiPicker\recent.json` and shown in the Recent tab 🕒.
 
+## Settings
+
+Settings live in `%APPDATA%\ClassicEmojiPicker\settings.json` (created with defaults on first run). Edit it in any text editor and restart the app to apply.
+
+### `emojiInsertMode` - how emoji are inserted
+
+Some emoji are a single character, but many are **joined sequences** - e.g. 🤷‍♂️ is a person + an invisible joiner + the male sign, and flags/skin-tone variants work the same way. Typed as individual keystrokes, these split apart in some apps (notably Chromium/Electron ones like WhatsApp, Discord, Slack), showing the pieces separately. Pasting them instead makes the app compose them correctly.
+
+| Value | Behaviour |
+|---|---|
+| `hybrid` *(default)* | Types simple emoji (works everywhere, no clipboard use) and **pastes** joined ones (ZWJ sequences, flags, skin-tone variants). Best of both. |
+| `paste` | Always inserts via the clipboard (Ctrl+V). Most reliable composition, but every insert briefly uses the clipboard and needs the target to accept Ctrl+V. |
+| `keystroke` | Always types; never touches the clipboard. Joined emoji may split in some apps. |
+
+```json
+{
+  "emojiInsertMode": "hybrid"
+}
+```
+
+> When an emoji is pasted, it briefly goes on the clipboard and Ctrl+V is sent; your previous **text** clipboard is restored afterwards. Other clipboard content (e.g. an image) can't be preserved across a paste - use `keystroke` mode if you never want the clipboard touched.
+
 ## How the Win+. takeover works
 
 The app installs a low-level keyboard hook that catches Win+. before the Windows shell does, opens this picker, and swallows the keystroke so the built-in panel doesn't also appear. This means the app must be running (it sits in the tray) for the shortcut to work - the installer's **Start with Windows** option keeps it available after every sign-in.

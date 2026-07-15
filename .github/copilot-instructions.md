@@ -26,8 +26,9 @@ See Project README.md
 - **HotkeyListener.cs**: `WH_KEYBOARD_LL` hook; on Win+. it captures the foreground window, focused child control, and text caret rectangle, raises an event, and swallows the key so the built-in panel is suppressed
 - **MainWindow.xaml.cs**: `Emoji`/`EmojiCategory` classes and picker logic; `ShowPicker()` anchors to the captured text caret (mouse-pointer fallback) and force-foregrounds (AttachThreadInput); selection hides (not closes) the reused window. The emoji grid is UI-virtualized (VirtualizingWrapPanel); search is debounced and matches names + keyword tags with name matches ranked first
 - **Emoji Data**: Full Unicode set from Emoji.Wpf's `EmojiData.AllGroups`, mapped to the seven Win10 categories in `GroupToCategory`
-- **Insertion**: `TextInjector.cs` types the emoji into the previously focused window (SendInput/KEYEVENTF_UNICODE), clipboard fallback
+- **Insertion**: `TextInjector.cs` puts the emoji into the previously focused window. Simple emoji are typed (SendInput/KEYEVENTF_UNICODE); joined graphemes (ZWJ/flag/skin-tone) are pasted (clipboard + Ctrl+V, previous text restored) because keystrokes split them in some apps. Mode is configurable via `Settings` (hybrid/paste/keystroke); clipboard fallback when there is no usable target
 - **Theming**: `ThemeManager.cs` merges `Theme/Light|DarkTheme.xaml` per the Windows setting and swaps live on `SystemEvents.UserPreferenceChanged`; XAML uses `DynamicResource` brushes
+- **Settings**: `Settings.cs` - user prefs in `%APPDATA%\ClassicEmojiPicker\settings.json` (`emojiInsertMode`), loaded once at startup
 - **Recent Emojis**: Persisted to `%APPDATA%\ClassicEmojiPicker\recent.json`
 - **Keyboard**: Window-level PreviewKeyDown - arrows move selection, Tab/Shift+Tab switch category, Enter commits, ESC dismisses; focus lives in the search box
 - **WinForms interop note**: `UseWindowsForms` is on for the tray icon, but the WinForms implicit global using is removed in the csproj to avoid clashing with WPF types; import `System.Windows.Forms` explicitly where needed
