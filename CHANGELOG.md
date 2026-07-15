@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased - v0.1.7]
 
 ### Fixed
-- **Joined emoji split apart in some apps** - emoji like 🤷‍♂️ (a ZWJ sequence), flags, and skin-tone variants are several code points glued together, and typing them as separate synthetic keystrokes made apps like WhatsApp/Discord/Slack show the pieces (and a stray joiner) separately. These are now **pasted** so the target composes them correctly, while simple emoji still type as before
+- **Joined emoji split apart in some apps** - emoji like 🤷‍♂️ (a ZWJ sequence), flags, and skin-tone variants are several code points glued together, and typing them as separate synthetic keystrokes made apps like WhatsApp/Discord/Slack show the pieces (and a stray joiner) separately. These are now **pasted** so the target composes them correctly, while simple emoji still type as before. The transient paste (and the restore of your previous clipboard) is tagged to stay out of Clipboard History (Win+V), Cloud Clipboard, and clipboard managers, so it doesn't pollute the history stack
 
 ### Added
 - **`settings.json`** (`%APPDATA%\ClassicEmojiPicker\settings.json`, created on first run) with `emojiInsertMode`: `hybrid` (default - type simple, paste joined), `paste` (always clipboard), or `keystroke` (always type, never touch the clipboard). See the README

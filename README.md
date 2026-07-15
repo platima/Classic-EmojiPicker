@@ -139,7 +139,7 @@ Some emoji are a single character, but many are **joined sequences** - e.g. 🤷
 }
 ```
 
-> When an emoji is pasted, it briefly goes on the clipboard and Ctrl+V is sent; your previous **text** clipboard is restored afterwards. Other clipboard content (e.g. an image) can't be preserved across a paste - use `keystroke` mode if you never want the clipboard touched.
+> When an emoji is pasted, it briefly goes on the clipboard and Ctrl+V is sent; your previous **text** clipboard is restored afterwards. The paste is tagged to stay out of **Clipboard History (Win+V)**, Cloud Clipboard, and clipboard managers, so it doesn't pollute your history stack. Other clipboard content (e.g. an image) can't be preserved across a paste - use `keystroke` mode if you never want the clipboard touched.
 
 ## How the Win+. takeover works
 

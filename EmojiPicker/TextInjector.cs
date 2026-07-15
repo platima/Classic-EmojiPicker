@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
@@ -157,7 +158,10 @@ namespace EmojiPicker
         /// Places <paramref name="text"/> on the clipboard, sends Ctrl+V so the
         /// target composes it as one string (which synthetic keystrokes fail to do
         /// for joined emoji in some apps), then restores the previous clipboard
-        /// text. Non-text clipboard content can't be preserved across a paste.
+        /// text. Both writes are tagged to stay out of Clipboard History (Win+V),
+        /// Cloud Clipboard and third-party monitors, so this transient paste does
+        /// not pollute the history stack. Non-text clipboard content can't be
+        /// preserved across a paste.
         /// </summary>
         private static async Task<bool> PasteViaClipboardAsync(string text)
         {
@@ -176,13 +180,8 @@ namespace EmojiPicker
                 // Couldn't read the clipboard; carry on but we won't restore it
             }
 
-            try
+            if (!SetClipboardTransient(text))
             {
-                System.Windows.Clipboard.SetText(text);
-            }
-            catch (Exception ex)
-            {
-                Logger.Log($"Paste: could not set clipboard ({ex.Message})");
                 return false;
             }
 
@@ -191,20 +190,45 @@ namespace EmojiPicker
             // Let the target read the clipboard before we put the old text back
             await Task.Delay(150);
 
-            try
+            // Restore the previous text (also history-excluded, so the restore
+            // doesn't add a duplicate entry). We leave non-text content alone.
+            if (hadText && previousText != null)
             {
-                if (hadText && previousText != null)
-                {
-                    System.Windows.Clipboard.SetText(previousText);
-                }
-            }
-            catch (Exception)
-            {
-                // Best-effort restore; never throw on the insert path
+                SetClipboardTransient(previousText);
             }
 
             Logger.Log("Paste: inserted via clipboard (Ctrl+V)");
             return true;
+        }
+
+        /// <summary>
+        /// Puts text on the clipboard tagged so Clipboard History (Win+V), Cloud
+        /// Clipboard, and clipboard monitors ignore it - the paste is transient and
+        /// must not clobber the user's history stack. Returns false on failure.
+        /// </summary>
+        private static bool SetClipboardTransient(string text)
+        {
+            try
+            {
+                var data = new System.Windows.DataObject();
+                data.SetText(text);
+
+                // These well-known formats opt the clipboard entry out of history,
+                // cloud sync, and monitor processing. Value 0 (DWORD) = exclude.
+                var excludeDword = new byte[] { 0, 0, 0, 0 };
+                data.SetData("CanIncludeInClipboardHistory", new MemoryStream(excludeDword));
+                data.SetData("CanUploadToCloudClipboard", new MemoryStream(excludeDword));
+                data.SetData("ExcludeClipboardContentFromMonitorProcessing", new MemoryStream(new byte[] { 0 }));
+
+                // copy=true renders the formats now so they persist after this call
+                System.Windows.Clipboard.SetDataObject(data, copy: true);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Paste: could not set clipboard ({ex.Message})");
+                return false;
+            }
         }
 
         /// <summary>
