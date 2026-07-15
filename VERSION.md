@@ -1,6 +1,6 @@
 # Version Information
 
-## Current Version: v0.1.6
+## Current Version: v0.1.7
 
 **Release Date**: 2026-07-13
 **Build**: Release
@@ -8,22 +8,18 @@
 **Architecture**: x64 (self-contained; a framework-dependent "lite" build is also published)
 
 ### Version Details
-- **Assembly Version**: 0.1.6.0
-- **File Version**: 0.1.6.0
-- **Product Version**: 0.1.6
-- **Informational Version**: 0.1.6
+- **Assembly Version**: 0.1.7.0
+- **File Version**: 0.1.7.0
+- **Product Version**: 0.1.7
+- **Informational Version**: 0.1.7
 
 ### Release Notes
-- Emoji cells match the Windows 10 look: larger glyphs (~75% of the cell) and a solid filled selection highlight instead of a border stroke
+- Joined emoji (🤷‍♂️ and other ZWJ sequences, flags, skin-tone variants) now insert correctly in apps like WhatsApp/Discord/Slack: they are pasted so the app composes them, while simple emoji still type
+- New `settings.json` with `emojiInsertMode` (hybrid / paste / keystroke) to control how emoji are inserted
+- The transient paste stays out of Clipboard History (Win+V), Cloud Clipboard, and clipboard managers
 
-### Previous Release (v0.1.5)
-- New MSI installer (per-machine, silent/enterprise: `msiexec /i <file> /qn`) alongside the Setup.exe installers, which now offer install-for-all-users as well as per-user
-- Search is popularity-aware (Unicode frequency data) with Windows 10-style keyword associations (emojilib): "laugh" finds 😅, "spl" puts 💦 first
-- Win+. toggles the picker closed when it is already open; releasing Win no longer opens the Start menu
-- Inserts feel immediate (foreground readiness is polled instead of a fixed 250 ms wait); elevated targets fall back to the clipboard
-- Esc clears an active search first, closes on the second press; arrow-key navigation fixed after deep scrolling
-- The seven category tabs fill the strip evenly with larger icons
-- 19 code-review fixes across robustness, shutdown, logging (5 MB rotation), and cleanup
+### Previous Release (v0.1.6)
+- Emoji cells match the Windows 10 look: larger glyphs (~75% of the cell) and a solid filled selection highlight instead of a border stroke
 
 ### Compatibility
 - **OS**: Windows 11, Windows 10 (version 1809+)

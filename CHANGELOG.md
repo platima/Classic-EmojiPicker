@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased - v0.1.7]
+## [v0.1.7] - 2026-07-13
 
 ### Fixed
 - **Joined emoji split apart in some apps** - emoji like 🤷‍♂️ (a ZWJ sequence), flags, and skin-tone variants are several code points glued together, and typing them as separate synthetic keystrokes made apps like WhatsApp/Discord/Slack show the pieces (and a stray joiner) separately. These are now **pasted** so the target composes them correctly, while simple emoji still type as before. The transient paste (and the restore of your previous clipboard) is tagged to stay out of Clipboard History (Win+V), Cloud Clipboard, and clipboard managers, so it doesn't pollute the history stack
