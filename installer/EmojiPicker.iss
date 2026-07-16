@@ -40,6 +40,9 @@ DefaultDirName={autopf}\Classic Emoji Picker
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#AppExe}
+; Just the name in Apps & Features; the version has its own column (otherwise
+; Inno's default shows "Classic Emoji Picker version x.y.z", duplicating it)
+UninstallDisplayName={#AppName}
 OutputDir=.\output
 #ifdef FrameworkDependent
 OutputBaseFilename=EmojiPicker-Setup-{#AppVersion}-lite

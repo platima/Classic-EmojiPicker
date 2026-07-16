@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Add/Remove Programs showed the version twice** - the Setup.exe uninstall entry read "Classic Emoji Picker version x.y.z" while the Version column also showed it. The name is now just "Classic Emoji Picker" (the MSI already did this)
+
 ## [v0.1.7] - 2026-07-13
 
 ### Fixed
