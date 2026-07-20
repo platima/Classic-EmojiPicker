@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Text editing shortcuts didn't work in the search box** - the window-level key handler claimed Left/Right for grid navigation regardless of modifiers, so the search box never saw them. **Ctrl+Shift+Left/Right** (select by word), **Ctrl+Left/Right** (jump by word) and **Shift+Left/Right** (select by character) now work; plain Left/Right still browse the emoji grid
 - **Add/Remove Programs showed the version twice** - the Setup.exe uninstall entry read "Classic Emoji Picker version x.y.z" while the Version column also showed it. The name is now just "Classic Emoji Picker" (the MSI already did this)
 
 ## [v0.1.7] - 2026-07-13

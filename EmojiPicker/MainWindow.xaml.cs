@@ -590,11 +590,17 @@ namespace EmojiPicker
                     e.Handled = true;
                     break;
                 case Key.Left:
-                    MoveSelection(-1);
-                    e.Handled = true;
-                    break;
                 case Key.Right:
-                    MoveSelection(1);
+                    // Plain arrows browse the emoji grid (focus stays in the
+                    // search box). With Ctrl and/or Shift they are text editing
+                    // - word jump and character/word selection - so leave them
+                    // unhandled and let the search box do its normal thing.
+                    if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) != 0)
+                    {
+                        break;
+                    }
+
+                    MoveSelection(e.Key == Key.Left ? -1 : 1);
                     e.Handled = true;
                     break;
                 case Key.Up:
