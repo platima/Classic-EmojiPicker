@@ -47,6 +47,7 @@ namespace EmojiPicker
         private HotkeyListener? hotkey;
         private NotifyIcon? trayIcon;
         private Thread? showThread;
+        private System.Windows.Threading.DispatcherTimer? hookRearmTimer;
         private volatile bool shuttingDown;
         private DateTime startupUtc;
 
@@ -105,6 +106,17 @@ namespace EmojiPicker
             hotkey.Start();
             Logger.Log("Keyboard hook installed");
 
+            // Windows can silently drop a low-level hook (callback timeout, secure
+            // desktop, session switch). Re-arm on session change and on a periodic
+            // backstop so Win+. recovers without a restart.
+            Microsoft.Win32.SystemEvents.SessionSwitch += OnSessionSwitch;
+            hookRearmTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(60),
+            };
+            hookRearmTimer.Tick += (_, _) => hotkey?.Rearm();
+            hookRearmTimer.Start();
+
             // Let a second launch (e.g. running the shortcut again) open the picker
             showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
             showThread = new Thread(ShowEventLoop) { IsBackground = true };
@@ -113,10 +125,16 @@ namespace EmojiPicker
             CreateTrayIcon();
         }
 
-        private void OnHotkeyPressed(IntPtr targetWindow, IntPtr focusWindow, System.Drawing.Rectangle? caretRect)
+        private void OnHotkeyPressed(IntPtr targetWindow)
         {
-            // The hook captured the foreground window, focused control, and caret at
-            // key-press time; the picker inserts the chosen emoji back into it
+            // Resolve the focused control and caret here (UI thread), off the hook
+            // thread. The target app still has focus (our window isn't shown yet),
+            // so this is the same state the hook would have captured - but a hung
+            // target can no longer stall the low-level hook and get it removed.
+            var focusWindow = TextInjector.GetFocusedControl(targetWindow);
+            System.Drawing.Rectangle? caretRect =
+                TextInjector.TryGetCaretRect(targetWindow, out var rect) ? rect : null;
+
             Logger.Log($"Hotkey pressed; target={targetWindow} focus={focusWindow} caret={(caretRect.HasValue ? caretRect.Value.ToString() : "none")}");
 
             // Win+. while the picker is open dismisses it (like the Windows 10
@@ -137,6 +155,17 @@ namespace EmojiPicker
             PreviousFocusWindow = focusWindow;
             PreviousCaretRect = caretRect;
             picker?.ShowPicker();
+        }
+
+        private void OnSessionSwitch(object sender, Microsoft.Win32.SessionSwitchEventArgs e)
+        {
+            // SystemEvents raises this on a background thread; re-arm on the UI
+            // thread, which owns the hook's message loop
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                hotkey?.Rearm();
+                Logger.Log($"Session switch ({e.Reason}) -> hook re-armed");
+            }));
         }
 
         private void ShowEventLoop()
@@ -329,6 +358,16 @@ namespace EmojiPicker
 
         protected override void OnExit(ExitEventArgs e)
         {
+            hookRearmTimer?.Stop();
+            try
+            {
+                Microsoft.Win32.SystemEvents.SessionSwitch -= OnSessionSwitch;
+            }
+            catch (Exception)
+            {
+                // SystemEvents teardown is best-effort
+            }
+
             hotkey?.Dispose();
             ThemeManager.Shutdown();
 

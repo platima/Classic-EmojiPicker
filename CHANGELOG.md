@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Paste-insert could destroy non-text clipboard content** - inserting a joined emoji (which pastes) while an image or copied files were on the clipboard overwrote them with no restore. The **entire** clipboard (all formats) is now snapshotted and restored, not just text
 - **Pasted emoji could come out as your previous clipboard text on slow/remote targets** - the fixed 150 ms wait before restoring raced RDP/Citrix sessions. The delay is now 250 ms and configurable via `pasteRestoreDelayMs`
 - **The insert-failure clipboard fallback polluted Clipboard History** - it now uses the same history/cloud-exclusion tagging as the paste path, and leaves the emoji for manual paste
+- **Win+. could silently stop working** - Windows can drop a low-level keyboard hook (callback timeout, secure desktop, session switch) with no notification and no recovery. The hook is now re-armed on session change and on a 60 s backstop, and the focused-control/caret lookups moved off the hook thread so a hung target app can't stall the hook into being removed
+- **Holding Win+. thrashed the picker open/closed** - auto-repeat key-downs now don't re-fire the hotkey; only the first press of a physical Win+. acts
 
 ## [v0.1.8] - 2026-07-16
 
