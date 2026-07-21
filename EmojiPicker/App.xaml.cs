@@ -50,6 +50,7 @@ namespace EmojiPicker
         private System.Windows.Threading.DispatcherTimer? hookRearmTimer;
         private volatile bool shuttingDown;
         private DateTime startupUtc;
+        private bool graceActive;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -79,6 +80,18 @@ namespace EmojiPicker
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             Logger.Log($"=== Startup v{version} ===");
             Settings.Load();
+
+            // Create the run-again event now, before the heavy warm-up below, so a
+            // relaunch during startup can signal it instead of failing to open a
+            // not-yet-created event. The auto-reset event latches the signal until
+            // the show-event loop starts (after the picker exists).
+            showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+
+            // The 3s show-grace only needs to suppress the one duplicate logon start
+            // that happens when both the all-users (HKLM) and per-user (HKCU)
+            // autostart entries exist. Without that duplicate, a run-again signal is
+            // always a genuine user relaunch and should open the picker immediately.
+            graceActive = IsStartupEnabled() && IsMachineStartupEnabled();
 
             // A resident utility should survive a bad frame: log the exception
             // and keep running rather than take Win+. down until relaunch
@@ -117,8 +130,8 @@ namespace EmojiPicker
             hookRearmTimer.Tick += (_, _) => hotkey?.Rearm();
             hookRearmTimer.Start();
 
-            // Let a second launch (e.g. running the shortcut again) open the picker
-            showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+            // Now that the picker exists, start handling run-again signals (a signal
+            // latched during startup is processed here). The event was created above.
             showThread = new Thread(ShowEventLoop) { IsBackground = true };
             showThread.Start();
 
@@ -185,10 +198,11 @@ namespace EmojiPicker
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    // Ignore signals right after startup: with both the HKLM and
-                    // HKCU Run values present (all-users install + tray toggle),
-                    // the second logon start signals us and would pop the picker
-                    if (DateTime.UtcNow - startupUtc < StartupShowGrace)
+                    // Ignore signals right after startup ONLY when a duplicate logon
+                    // start is actually possible (both the HKLM all-users and HKCU
+                    // per-user Run values present); that duplicate would otherwise
+                    // pop the picker. Otherwise a run-again is a real user relaunch.
+                    if (graceActive && DateTime.UtcNow - startupUtc < StartupShowGrace)
                     {
                         Logger.Log("Show requested (run-again) ignored during startup grace");
                         return;

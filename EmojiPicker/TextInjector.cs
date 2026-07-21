@@ -71,6 +71,17 @@ namespace EmojiPicker
             }
 
             rect = System.Drawing.Rectangle.FromLTRB(topLeft.X, topLeft.Y, bottomRight.X, bottomRight.Y);
+
+            // A real text caret has a line height. Some apps keep a system caret
+            // parked/hidden at client (0,0) with an empty rect even when the visible
+            // cursor is elsewhere; treat that as "no caret" so the picker anchors to
+            // the mouse instead of the window's top-left corner.
+            if (rect.Height <= 0)
+            {
+                rect = default;
+                return false;
+            }
+
             return true;
         }
 

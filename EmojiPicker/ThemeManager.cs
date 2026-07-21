@@ -47,8 +47,24 @@ namespace EmojiPicker
                 return;
             }
 
-            // SystemEvents fires on a background thread; touch resources on the UI thread
-            Application.Current?.Dispatcher.Invoke(() => Apply(wantDark));
+            // SystemEvents fires on a background thread; touch resources on the UI
+            // thread. Guard the cross-thread call against a racing app shutdown -
+            // Invoke throws on this thread once the dispatcher has begun shutting
+            // down, and that exception wouldn't be caught by the UI handler.
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null || dispatcher.HasShutdownStarted)
+            {
+                return;
+            }
+
+            try
+            {
+                dispatcher.Invoke(() => Apply(wantDark));
+            }
+            catch (Exception)
+            {
+                // The dispatcher shut down between the check and the Invoke; harmless
+            }
         }
 
         private static void Apply(bool dark)

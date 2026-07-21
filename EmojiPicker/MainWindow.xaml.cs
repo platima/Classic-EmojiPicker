@@ -147,7 +147,14 @@ namespace EmojiPicker
             Dispatcher.BeginInvoke(
                 new Action(() =>
                 {
-                    Hide();
+                    // Only hide if we're still the off-screen prewarm window. If a
+                    // hotkey ShowPicker ran first (during startup), it repositioned
+                    // us on-screen - don't yank it back closed.
+                    if (Left <= -30000)
+                    {
+                        Hide();
+                    }
+
                     ShowActivated = true;
 
                     // Startup allocates heavily (emoji database, glyph warm-up);
@@ -569,6 +576,14 @@ namespace EmojiPicker
 
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            // While an IME is composing (CJK etc.), Enter commits the candidate and
+            // the arrows move the candidate window - let the IME have those keys
+            // instead of hijacking them for grid nav / emoji commit.
+            if (e.Key == Key.ImeProcessed || e.Key == Key.DeadCharProcessed)
+            {
+                return;
+            }
+
             // Win10 picker behaviour: typing searches while the arrow keys move
             // the grid selection and Enter commits it, wherever focus happens to be
             switch (e.Key)
@@ -778,6 +793,7 @@ namespace EmojiPicker
                 }
 
                 recentEmojis = characters
+                    .Distinct() // a corrupt/legacy file could contain duplicates
                     .Select(character => allEmojis.FirstOrDefault(item => item.Character == character))
                     .OfType<Emoji>()
                     .Take(MaxRecentEmojis)
@@ -795,7 +811,20 @@ namespace EmojiPicker
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(RecentEmojisFile)!);
-                File.WriteAllText(RecentEmojisFile, JsonSerializer.Serialize(recentEmojis.Select(item => item.Character)));
+                var json = JsonSerializer.Serialize(recentEmojis.Select(item => item.Character));
+
+                // Write to a temp file then atomically swap it in, so a crash or
+                // power loss mid-write can't leave a truncated recent.json
+                var tmp = RecentEmojisFile + ".tmp";
+                File.WriteAllText(tmp, json);
+                if (File.Exists(RecentEmojisFile))
+                {
+                    File.Replace(tmp, RecentEmojisFile, null);
+                }
+                else
+                {
+                    File.Move(tmp, RecentEmojisFile);
+                }
             }
             catch (Exception)
             {

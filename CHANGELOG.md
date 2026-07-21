@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MSI: `AUTOSTART=0` was forgotten on upgrade/repair** - the choice is now persisted to the registry and read back, so a later upgrade/repair that doesn't re-pass `AUTOSTART=0` no longer silently re-enables all-users autostart
 - **MSI: uninstall orphaned the tray toggle's per-user autostart** - the MSI now removes the HKCU Run value on uninstall (best-effort, mirroring the Inno installer), so Windows doesn't try to launch a deleted exe at logon
 - **Inno: stale fallback version** - the local-build fallback `AppVersion` is bumped to match the app (only affects `ISCC` runs without `/DAppVersion`; CI is unaffected)
+- **Relaunch-to-open could do nothing right after startup** - re-running the app to open the picker within the first few seconds was dropped. The launcher event is now created before the slow warm-up, and the startup grace only applies when a duplicate logon start is actually possible
+- **Picker could open in a corner instead of at the caret** - an app parking a hidden system caret at (0,0) is now treated as "no caret" so the picker falls back to the mouse pointer
+- **IME composition keys were hijacked** - while an IME is composing (CJK etc.), Enter/arrows now go to the IME instead of committing an emoji / moving the grid
+- **recent.json could be truncated by a crash mid-write** - it's now written atomically (temp file + swap) and de-duplicated on load
+- Guarded a rare theme-change-during-exit crash, and a startup-timing case where the pre-warm could hide a picker a hotkey had just opened
 
 ## [v0.1.8] - 2026-07-16
 
