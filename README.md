@@ -133,13 +133,18 @@ Some emoji are a single character, but many are **joined sequences** - e.g. 🤷
 | `paste` | Always inserts via the clipboard (Ctrl+V). Most reliable composition, but every insert briefly uses the clipboard and needs the target to accept Ctrl+V. |
 | `keystroke` | Always types; never touches the clipboard. Joined emoji may split in some apps. |
 
+### `pasteRestoreDelayMs` - paste restore timing
+
+When a joined emoji is pasted, the app briefly puts it on the clipboard, sends Ctrl+V, waits, then restores your previous clipboard. The wait defaults to **250 ms**. On slow or remote sessions (RDP/Citrix) the target may read the clipboard later than that, restoring your old content before the emoji is read - raise this value if pasted emoji occasionally come out as your previously-copied text. Clamped to 50-5000 ms.
+
 ```json
 {
-  "emojiInsertMode": "hybrid"
+  "emojiInsertMode": "hybrid",
+  "pasteRestoreDelayMs": 250
 }
 ```
 
-> When an emoji is pasted, it briefly goes on the clipboard and Ctrl+V is sent; your previous **text** clipboard is restored afterwards. The paste is tagged to stay out of **Clipboard History (Win+V)**, Cloud Clipboard, and clipboard managers, so it doesn't pollute your history stack. Other clipboard content (e.g. an image) can't be preserved across a paste - use `keystroke` mode if you never want the clipboard touched.
+> When an emoji is pasted, it briefly goes on the clipboard and Ctrl+V is sent; your **entire** previous clipboard (text **and** non-text like images or copied files) is snapshotted and restored afterwards. Both the paste and the restore are tagged to stay out of **Clipboard History (Win+V)**, Cloud Clipboard, and clipboard managers, so it doesn't pollute your history stack. Use `keystroke` mode if you never want the clipboard touched at all.
 
 ## How the Win+. takeover works
 

@@ -700,15 +700,10 @@ namespace EmojiPicker
 
                 if (!inserted)
                 {
-                    Logger.Log("Insert failed; falling back to clipboard");
-                    try
-                    {
-                        Clipboard.SetText(emoji.Character);
-                    }
-                    catch (Exception)
-                    {
-                        // Clipboard can be locked by another process; nothing sensible to do here
-                    }
+                    // Leave the emoji on the clipboard for manual paste - tagged to
+                    // stay out of Clipboard History, like the paste path
+                    Logger.Log("Insert failed; leaving the emoji on the clipboard");
+                    TextInjector.SetEmojiOnClipboard(emoji.Character);
                 }
             }), System.Windows.Threading.DispatcherPriority.Background);
         }

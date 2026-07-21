@@ -158,77 +158,135 @@ namespace EmojiPicker
         /// Places <paramref name="text"/> on the clipboard, sends Ctrl+V so the
         /// target composes it as one string (which synthetic keystrokes fail to do
         /// for joined emoji in some apps), then restores the previous clipboard
-        /// text. Both writes are tagged to stay out of Clipboard History (Win+V),
-        /// Cloud Clipboard and third-party monitors, so this transient paste does
-        /// not pollute the history stack. Non-text clipboard content can't be
-        /// preserved across a paste.
+        /// content. The full clipboard (all formats, incl. images/files) is
+        /// snapshotted and restored, and both writes are tagged to stay out of
+        /// Clipboard History (Win+V), Cloud Clipboard and third-party monitors, so
+        /// the transient paste neither destroys existing content nor pollutes the
+        /// history stack.
         /// </summary>
         private static async Task<bool> PasteViaClipboardAsync(string text)
         {
-            string? previousText = null;
-            var hadText = false;
-            try
-            {
-                hadText = System.Windows.Clipboard.ContainsText();
-                if (hadText)
-                {
-                    previousText = System.Windows.Clipboard.GetText();
-                }
-            }
-            catch (Exception)
-            {
-                // Couldn't read the clipboard; carry on but we won't restore it
-            }
+            // Snapshot the ENTIRE clipboard (all formats) before overwriting, so a
+            // copied image / file selection isn't destroyed by the paste.
+            var previous = CaptureClipboard();
 
-            if (!SetClipboardTransient(text))
+            if (!SetEmojiOnClipboard(text))
             {
                 return false;
             }
 
             SendCtrlV();
 
-            // Let the target read the clipboard before we put the old text back
-            await Task.Delay(150);
+            // Give the target time to read the clipboard before restoring. A single
+            // fixed delay races slow/remote (RDP/Citrix) targets - which then paste
+            // the restored old content instead of the emoji - so it is configurable.
+            var delay = Math.Clamp(Settings.Current.PasteRestoreDelayMs, 50, 5000);
+            await Task.Delay(delay);
 
-            // Restore the previous text (also history-excluded, so the restore
-            // doesn't add a duplicate entry). We leave non-text content alone.
-            if (hadText && previousText != null)
+            if (previous != null)
             {
-                SetClipboardTransient(previousText);
+                RestoreClipboard(previous);
             }
+            // else: the clipboard was empty or unreadable - leave the emoji on it so
+            // the user can paste manually if the injected Ctrl+V didn't land.
 
-            Logger.Log("Paste: inserted via clipboard (Ctrl+V)");
+            Logger.Log($"Paste: inserted via clipboard (Ctrl+V), restore after {delay}ms");
             return true;
         }
 
         /// <summary>
-        /// Puts text on the clipboard tagged so Clipboard History (Win+V), Cloud
-        /// Clipboard, and clipboard monitors ignore it - the paste is transient and
-        /// must not clobber the user's history stack. Returns false on failure.
+        /// Puts an emoji on the clipboard tagged so Clipboard History (Win+V), Cloud
+        /// Clipboard, and clipboard monitors ignore it. Public so the insert-failure
+        /// fallback can leave the emoji for manual paste without polluting history.
+        /// Returns false on failure.
         /// </summary>
-        private static bool SetClipboardTransient(string text)
+        public static bool SetEmojiOnClipboard(string text)
         {
             try
             {
                 var data = new System.Windows.DataObject();
                 data.SetText(text);
-
-                // These well-known formats opt the clipboard entry out of history,
-                // cloud sync, and monitor processing. Value 0 (DWORD) = exclude.
-                var excludeDword = new byte[] { 0, 0, 0, 0 };
-                data.SetData("CanIncludeInClipboardHistory", new MemoryStream(excludeDword));
-                data.SetData("CanUploadToCloudClipboard", new MemoryStream(excludeDword));
-                data.SetData("ExcludeClipboardContentFromMonitorProcessing", new MemoryStream(new byte[] { 0 }));
-
-                // copy=true renders the formats now so they persist after this call
+                AddHistoryExclusion(data);
                 System.Windows.Clipboard.SetDataObject(data, copy: true);
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Log($"Paste: could not set clipboard ({ex.Message})");
+                Logger.Log($"Clipboard set failed ({ex.Message})");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Copies every native clipboard format into a detached DataObject while the
+        /// clipboard is still intact, so it can be restored after the paste. Returns
+        /// null when the clipboard is empty or nothing could be read.
+        /// </summary>
+        private static System.Windows.IDataObject? CaptureClipboard()
+        {
+            try
+            {
+                var current = System.Windows.Clipboard.GetDataObject();
+                if (current == null)
+                {
+                    return null;
+                }
+
+                var snapshot = new System.Windows.DataObject();
+                var copied = false;
+                foreach (var format in current.GetFormats(autoConvert: false))
+                {
+                    try
+                    {
+                        var data = current.GetData(format, autoConvert: false);
+                        if (data != null)
+                        {
+                            snapshot.SetData(format, data);
+                            copied = true;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // Skip any format that can't be read/round-tripped
+                    }
+                }
+
+                return copied ? snapshot : null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static void RestoreClipboard(System.Windows.IDataObject snapshot)
+        {
+            try
+            {
+                if (snapshot is System.Windows.DataObject data)
+                {
+                    // History-exclude the restore too, so putting the user's own
+                    // content back doesn't add a duplicate Win+V entry.
+                    AddHistoryExclusion(data);
+                    System.Windows.Clipboard.SetDataObject(data, copy: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Paste: clipboard restore failed ({ex.Message})");
+            }
+        }
+
+        /// <summary>
+        /// Tags a DataObject so Clipboard History, Cloud Clipboard, and clipboard
+        /// monitors ignore it. Value 0 (DWORD) = exclude.
+        /// </summary>
+        private static void AddHistoryExclusion(System.Windows.DataObject data)
+        {
+            var excludeDword = new byte[] { 0, 0, 0, 0 };
+            data.SetData("CanIncludeInClipboardHistory", new MemoryStream(excludeDword));
+            data.SetData("CanUploadToCloudClipboard", new MemoryStream(excludeDword));
+            data.SetData("ExcludeClipboardContentFromMonitorProcessing", new MemoryStream(new byte[] { 0 }));
         }
 
         /// <summary>

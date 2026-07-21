@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed (adversarial review pass)
+- **Paste-insert could destroy non-text clipboard content** - inserting a joined emoji (which pastes) while an image or copied files were on the clipboard overwrote them with no restore. The **entire** clipboard (all formats) is now snapshotted and restored, not just text
+- **Pasted emoji could come out as your previous clipboard text on slow/remote targets** - the fixed 150 ms wait before restoring raced RDP/Citrix sessions. The delay is now 250 ms and configurable via `pasteRestoreDelayMs`
+- **The insert-failure clipboard fallback polluted Clipboard History** - it now uses the same history/cloud-exclusion tagging as the paste path, and leaves the emoji for manual paste
+
 ## [v0.1.8] - 2026-07-16
 
 ### Fixed

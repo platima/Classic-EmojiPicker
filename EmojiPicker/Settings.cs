@@ -43,6 +43,16 @@ namespace EmojiPicker
         [JsonPropertyName("emojiInsertMode")]
         public string EmojiInsertMode { get; set; } = "hybrid";
 
+        /// <summary>
+        /// How long (ms) to wait after Ctrl+V before restoring the previous
+        /// clipboard, when a joined emoji is pasted. The target reads the clipboard
+        /// on its own schedule; a too-short wait can restore the old content before
+        /// a slow/remote (RDP/Citrix) target has read the emoji, so it is
+        /// configurable. Clamped to 50-5000 ms at use.
+        /// </summary>
+        [JsonPropertyName("pasteRestoreDelayMs")]
+        public int PasteRestoreDelayMs { get; set; } = 250;
+
         [JsonIgnore]
         public EmojiInsertMode InsertMode => EmojiInsertMode?.Trim().ToLowerInvariant() switch
         {
