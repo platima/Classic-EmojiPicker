@@ -17,7 +17,9 @@
 ;     (run from an elevated shell for unattended use; otherwise UAC prompts)
 
 #ifndef AppVersion
-  #define AppVersion "0.1.4"
+  ; Fallback only for local ISCC runs without /DAppVersion (CI always passes it).
+  ; Keep in lockstep with <Version> in EmojiPicker/EmojiPicker.csproj.
+  #define AppVersion "0.1.8"
 #endif
 
 #ifndef PublishDir

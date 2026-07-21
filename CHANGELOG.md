@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The insert-failure clipboard fallback polluted Clipboard History** - it now uses the same history/cloud-exclusion tagging as the paste path, and leaves the emoji for manual paste
 - **Win+. could silently stop working** - Windows can drop a low-level keyboard hook (callback timeout, secure desktop, session switch) with no notification and no recovery. The hook is now re-armed on session change and on a 60 s backstop, and the focused-control/caret lookups moved off the hook thread so a hung target app can't stall the hook into being removed
 - **Holding Win+. thrashed the picker open/closed** - auto-repeat key-downs now don't re-fire the hotkey; only the first press of a physical Win+. acts
+- **MSI: `AUTOSTART=0` was forgotten on upgrade/repair** - the choice is now persisted to the registry and read back, so a later upgrade/repair that doesn't re-pass `AUTOSTART=0` no longer silently re-enables all-users autostart
+- **MSI: uninstall orphaned the tray toggle's per-user autostart** - the MSI now removes the HKCU Run value on uninstall (best-effort, mirroring the Inno installer), so Windows doesn't try to launch a deleted exe at logon
+- **Inno: stale fallback version** - the local-build fallback `AppVersion` is bumped to match the app (only affects `ISCC` runs without `/DAppVersion`; CI is unaffected)
 
 ## [v0.1.8] - 2026-07-16
 
