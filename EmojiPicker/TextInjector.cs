@@ -178,14 +178,17 @@ namespace EmojiPicker
         private static async Task<bool> PasteViaClipboardAsync(string text)
         {
             // Snapshot the ENTIRE clipboard (all formats) before overwriting, so a
-            // copied image / file selection isn't destroyed by the paste.
+            // copied image / file selection isn't destroyed by the paste. Grab the
+            // text separately as a guaranteed-restorable fallback.
             var previous = CaptureClipboard();
+            var previousText = TryGetText(previous);
 
-            if (!SetEmojiOnClipboard(text))
+            if (!SetClipboardTextExcluded(text))
             {
                 return false;
             }
 
+            var sequenceAfterSet = NativeMethods.GetClipboardSequenceNumber();
             SendCtrlV();
 
             // Give the target time to read the clipboard before restoring. A single
@@ -194,24 +197,35 @@ namespace EmojiPicker
             var delay = Math.Clamp(Settings.Current.PasteRestoreDelayMs, 50, 5000);
             await Task.Delay(delay);
 
-            if (previous != null)
-            {
-                RestoreClipboard(previous);
-            }
-            // else: the clipboard was empty or unreadable - leave the emoji on it so
-            // the user can paste manually if the injected Ctrl+V didn't land.
+            // If the clipboard changed during the wait, the user copied something
+            // else - don't clobber their new content with the old snapshot.
+            var userCopied = NativeMethods.GetClipboardSequenceNumber() != sequenceAfterSet;
 
-            Logger.Log($"Paste: inserted via clipboard (Ctrl+V), restore after {delay}ms");
+            if (previous != null && !userCopied)
+            {
+                // Restore the full snapshot; if that fails (a stale handle-backed
+                // format can't be re-serialised), at least put the text back so we
+                // never lose more than the old text-only restore did.
+                if (!RestoreClipboard(previous) && previousText != null)
+                {
+                    SetClipboardTextExcluded(previousText);
+                }
+            }
+            // else: clipboard was empty/unreadable, or the user copied during the
+            // wait - leave what's there (the emoji, or the user's new copy).
+
+            Logger.Log($"Paste: inserted via clipboard (Ctrl+V), restore after {delay}ms" +
+                (userCopied ? " (skipped - user copied)" : string.Empty));
             return true;
         }
 
         /// <summary>
-        /// Puts an emoji on the clipboard tagged so Clipboard History (Win+V), Cloud
+        /// Puts text on the clipboard tagged so Clipboard History (Win+V), Cloud
         /// Clipboard, and clipboard monitors ignore it. Public so the insert-failure
         /// fallback can leave the emoji for manual paste without polluting history.
         /// Returns false on failure.
         /// </summary>
-        public static bool SetEmojiOnClipboard(string text)
+        public static bool SetClipboardTextExcluded(string text)
         {
             try
             {
@@ -270,7 +284,29 @@ namespace EmojiPicker
             }
         }
 
-        private static void RestoreClipboard(System.Windows.IDataObject snapshot)
+        private static string? TryGetText(System.Windows.IDataObject? snapshot)
+        {
+            try
+            {
+                if (snapshot != null && snapshot.GetDataPresent(System.Windows.DataFormats.UnicodeText))
+                {
+                    return snapshot.GetData(System.Windows.DataFormats.UnicodeText) as string;
+                }
+            }
+            catch (Exception)
+            {
+                // No usable text; the fallback simply won't run
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Restores a captured snapshot to the clipboard. Returns false if the whole
+        /// restore failed (e.g. a handle-backed format went stale), so the caller can
+        /// fall back to restoring the plain text.
+        /// </summary>
+        private static bool RestoreClipboard(System.Windows.IDataObject snapshot)
         {
             try
             {
@@ -280,11 +316,15 @@ namespace EmojiPicker
                     // content back doesn't add a duplicate Win+V entry.
                     AddHistoryExclusion(data);
                     System.Windows.Clipboard.SetDataObject(data, copy: true);
+                    return true;
                 }
+
+                return false;
             }
             catch (Exception ex)
             {
-                Logger.Log($"Paste: clipboard restore failed ({ex.Message})");
+                Logger.Log($"Paste: full clipboard restore failed ({ex.Message}); trying text");
+                return false;
             }
         }
 

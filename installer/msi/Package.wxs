@@ -61,7 +61,10 @@
          later upgrade/repair that doesn't re-pass AUTOSTART=0 honours the
          original opt-out instead of silently re-enabling autostart. A value on
          the command line still overrides the remembered one. -->
-    <Property Id="AUTOSTART" Value="1">
+    <!-- Secure so a command-line AUTOSTART=0 reaches the elevated execute
+         sequence on a per-machine install (a plain public property would be
+         dropped when the client isn't already elevated). -->
+    <Property Id="AUTOSTART" Value="1" Secure="yes">
       <RegistrySearch Id="AutostartPersistedSearch" Root="HKLM"
                       Key="Software\Platima\Classic Emoji Picker"
                       Name="Autostart" Type="raw" />
@@ -104,18 +107,18 @@
     </Component>
 
     <!-- Always installed. Remembers the AUTOSTART choice so the RegistrySearch
-         above can honour it on a later upgrade/repair. Also removes the tray
-         "Start with Windows" toggle's per-user (HKCU) Run value on uninstall so
-         it doesn't orphan pointing at a deleted exe. The HKCU removal is
-         best-effort - it reaches the uninstalling user's hive, mirroring the
-         Inno installer's CurUninstallStepChanged cleanup. -->
+         above can honour it on a later upgrade/repair.
+         Note: the tray "Start with Windows" toggle writes a per-user (HKCU) Run
+         value. The MSI intentionally does NOT try to remove that here - MSI's
+         RemoveRegistry acts on component install, not uninstall, and a per-machine
+         /qn uninstall runs as SYSTEM (not the user), so any attempt either wipes
+         the user's choice on every repair/upgrade or reaches the wrong hive. A
+         leftover Run entry pointing at the removed exe is benign (Windows skips
+         it). The Inno installer, which runs in the user's context, cleans it up. -->
     <Component Id="AutostartState" Directory="INSTALLFOLDER">
       <RegistryValue Root="HKLM"
                      Key="Software\Platima\Classic Emoji Picker"
                      Name="Autostart" Type="string" Value="[AUTOSTART]" KeyPath="yes" />
-      <RemoveRegistryValue Root="HKCU"
-                           Key="Software\Microsoft\Windows\CurrentVersion\Run"
-                           Name="ClassicEmojiPicker" />
     </Component>
 
     <Feature Id="Main" Level="1">

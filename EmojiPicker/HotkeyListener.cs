@@ -75,6 +75,11 @@ namespace EmojiPicker
         /// </summary>
         public void Rearm()
         {
+            // Clear the auto-repeat latch: if a '.' key-up was missed (e.g. the
+            // release landed on a secure desktop during a UAC prompt, which is also
+            // when we re-arm), periodHeld could be stuck and swallow the next Win+.
+            periodHeld = false;
+
             var fresh = NativeMethods.SetWindowsHookEx(WhKeyboardLl, hookProc, IntPtr.Zero, 0);
             if (fresh == IntPtr.Zero)
             {

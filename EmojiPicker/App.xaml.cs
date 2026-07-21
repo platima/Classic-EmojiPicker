@@ -49,7 +49,7 @@ namespace EmojiPicker
         private Thread? showThread;
         private System.Windows.Threading.DispatcherTimer? hookRearmTimer;
         private volatile bool shuttingDown;
-        private DateTime startupUtc;
+        private DateTime showGraceAnchorUtc;
         private bool graceActive;
 
         protected override void OnStartup(StartupEventArgs e)
@@ -76,7 +76,6 @@ namespace EmojiPicker
             }
 
             Logger.Initialize();
-            startupUtc = DateTime.UtcNow;
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             Logger.Log($"=== Startup v{version} ===");
             Settings.Load();
@@ -132,6 +131,10 @@ namespace EmojiPicker
 
             // Now that the picker exists, start handling run-again signals (a signal
             // latched during startup is processed here). The event was created above.
+            // Anchor the show-grace HERE, not at process start: a duplicate-logon
+            // signal latched during a slow warm-up must still fall inside the grace
+            // window when the loop finally consumes it, or the picker would pop open.
+            showGraceAnchorUtc = DateTime.UtcNow;
             showThread = new Thread(ShowEventLoop) { IsBackground = true };
             showThread.Start();
 
@@ -202,7 +205,7 @@ namespace EmojiPicker
                     // start is actually possible (both the HKLM all-users and HKCU
                     // per-user Run values present); that duplicate would otherwise
                     // pop the picker. Otherwise a run-again is a real user relaunch.
-                    if (graceActive && DateTime.UtcNow - startupUtc < StartupShowGrace)
+                    if (graceActive && DateTime.UtcNow - showGraceAnchorUtc < StartupShowGrace)
                     {
                         Logger.Log("Show requested (run-again) ignored during startup grace");
                         return;

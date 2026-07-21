@@ -718,7 +718,7 @@ namespace EmojiPicker
                     // Leave the emoji on the clipboard for manual paste - tagged to
                     // stay out of Clipboard History, like the paste path
                     Logger.Log("Insert failed; leaving the emoji on the clipboard");
-                    TextInjector.SetEmojiOnClipboard(emoji.Character);
+                    TextInjector.SetClipboardTextExcluded(emoji.Character);
                 }
             }), System.Windows.Threading.DispatcherPriority.Background);
         }

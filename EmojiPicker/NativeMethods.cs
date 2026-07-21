@@ -69,6 +69,11 @@ namespace EmojiPicker
         [DllImport("user32.dll", SetLastError = true)]
         internal static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
+        // Increments whenever the clipboard CONTENT changes (a set, not a read),
+        // so we can tell if the user copied something during the paste-restore wait
+        [DllImport("user32.dll")]
+        internal static extern uint GetClipboardSequenceNumber();
+
         // --- Process / token (elevation check) ---
 
         internal const uint ProcessQueryLimitedInformation = 0x1000;
