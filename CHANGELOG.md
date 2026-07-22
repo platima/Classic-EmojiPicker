@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.1.9] - 2026-07-22
 
 ### Fixed (adversarial review pass)
 - **Paste-insert could destroy non-text clipboard content** - inserting a joined emoji (which pastes) while an image or copied files were on the clipboard overwrote them with no restore. The **entire** clipboard (all formats) is now snapshotted and restored, not just text

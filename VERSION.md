@@ -1,26 +1,27 @@
 # Version Information
 
-## Current Version: v0.1.8
+## Current Version: v0.1.9
 
-**Release Date**: 2026-07-16
+**Release Date**: 2026-07-22
 **Build**: Release
 **Target Framework**: .NET 8.0-windows
 **Architecture**: x64 (self-contained; a framework-dependent "lite" build is also published)
 
 ### Version Details
-- **Assembly Version**: 0.1.8.0
-- **File Version**: 0.1.8.0
-- **Product Version**: 0.1.8
-- **Informational Version**: 0.1.8
+- **Assembly Version**: 0.1.9.0
+- **File Version**: 0.1.9.0
+- **Product Version**: 0.1.9
+- **Informational Version**: 0.1.9
 
-### Release Notes
-- Text editing shortcuts work in the search box: Ctrl+Shift+Left/Right (select by word), Ctrl+Left/Right (jump by word), Shift+Left/Right (select by character); plain arrows still browse the emoji grid
+### Release Notes (hardening pass from a multi-agent adversarial review)
+- Paste-insert now preserves the whole clipboard (images/files too), skips the restore if you copied during the wait, and no longer risks losing content on slow/remote targets (`pasteRestoreDelayMs`)
+- Win+. recovers if Windows drops the keyboard hook (session change / timeout), and holding it no longer thrashes the picker
+- MSI remembers `AUTOSTART=0` across upgrade/repair (secure property)
+- Search-box IME composition, atomic recent.json writes, degenerate-caret and shutdown-race guards
+
+### Previous Release (v0.1.8)
+- Text editing shortcuts work in the search box: Ctrl+Shift+Left/Right, Ctrl+Left/Right, Shift+Left/Right; plain arrows still browse the grid
 - Add/Remove Programs no longer repeats the version in the entry name
-
-### Previous Release (v0.1.7)
-- Joined emoji (🤷‍♂️ and other ZWJ sequences, flags, skin-tone variants) now insert correctly in apps like WhatsApp/Discord/Slack: they are pasted so the app composes them, while simple emoji still type
-- New `settings.json` with `emojiInsertMode` (hybrid / paste / keystroke) to control how emoji are inserted
-- The transient paste stays out of Clipboard History (Win+V), Cloud Clipboard, and clipboard managers
 
 ### Compatibility
 - **OS**: Windows 11, Windows 10 (version 1809+)
