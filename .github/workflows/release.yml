@@ -75,6 +75,16 @@ jobs:
           -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
           -o ./Classic-EmojiPicker-${{ github.ref_name }}-setup-win-x64.msi
 
+    - name: Remove any existing release for this tag (clean re-cut)
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # If the tag is re-cut (moved), delete the stale release first so its
+        # old-named assets don't linger alongside the new ones. Keep the tag.
+        gh release delete ${{ github.ref_name }} --yes --cleanup-tag=false 2>$null
+        exit 0
+
     - name: Create Release
       uses: softprops/action-gh-release@v3
       with:
