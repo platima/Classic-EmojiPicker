@@ -34,8 +34,8 @@ jobs:
 
     - name: Create Release Archives
       run: |
-        Compress-Archive -Path ./publish/* -DestinationPath ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
-        Compress-Archive -Path ./publish-lite/* -DestinationPath ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64-lite.zip
+        Compress-Archive -Path ./publish/* -DestinationPath ./Classic-EmojiPicker-${{ github.ref_name }}-portable-win-x64.zip
+        Compress-Archive -Path ./publish-lite/* -DestinationPath ./Classic-EmojiPicker-${{ github.ref_name }}-portable-lite-win-x64.zip
 
     - name: Install Inno Setup
       run: choco install innosetup --no-progress -y
@@ -73,31 +73,31 @@ jobs:
           -d Version=$msiVersion `
           -d "PublishDir=$(Resolve-Path ./publish)" `
           -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
-          -o ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.msi
+          -o ./Classic-EmojiPicker-${{ github.ref_name }}-setup-win-x64.msi
 
     - name: Create Release
       uses: softprops/action-gh-release@v3
       with:
         files: |
-          ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.zip
-          ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64-lite.zip
-          ./ClassicEmojiPicker-${{ github.ref_name }}-win-x64.msi
-          ./installer/output/EmojiPicker-Setup-*.exe
+          ./Classic-EmojiPicker-${{ github.ref_name }}-portable-win-x64.zip
+          ./Classic-EmojiPicker-${{ github.ref_name }}-portable-lite-win-x64.zip
+          ./Classic-EmojiPicker-${{ github.ref_name }}-setup-win-x64.msi
+          ./installer/output/Classic-EmojiPicker-*-setup*-win-x64.exe
         name: Classic Emoji Picker ${{ github.ref_name }}
         body: |
           ## Classic Emoji Picker ${{ github.ref_name }}
 
-          **Recommended:** download `EmojiPicker-Setup-<version>.exe` and run it.
+          **Recommended:** download `Classic-EmojiPicker-<version>-setup-win-x64.exe` and run it.
           It asks whether to install for all users or just you (per-user needs no admin).
           Tick "Start with Windows" so **Win+.** opens this picker after every sign-in.
 
           | Download | Size | Needs |
           |---|---|---|
-          | `EmojiPicker-Setup-<version>.exe` | larger | nothing - runtime included |
-          | `EmojiPicker-Setup-<version>-lite.exe` | small | [.NET Desktop Runtime 8 (x64)](https://dotnet.microsoft.com/download/dotnet/8.0) - setup checks and links it if missing |
-          | `ClassicEmojiPicker-<version>-win-x64.msi` | larger | nothing - per-machine, for silent/enterprise deploys: `msiexec /i <file> /qn` (add `AUTOSTART=0` to skip the Run key) |
+          | `Classic-EmojiPicker-<version>-setup-win-x64.exe` | larger | nothing - runtime included |
+          | `Classic-EmojiPicker-<version>-setup-lite-win-x64.exe` | small | [.NET Desktop Runtime 8 (x64)](https://dotnet.microsoft.com/download/dotnet/8.0) - setup checks and links it if missing |
+          | `Classic-EmojiPicker-<version>-setup-win-x64.msi` | larger | nothing - per-machine, for silent/enterprise deploys: `msiexec /i <file> /qn` (add `AUTOSTART=0` to skip the Run key) |
 
-          The `.zip` files are the same two builds in portable form - extract and run `EmojiPicker.exe`.
+          The `-portable-*.zip` files are the same two builds in portable form - extract and run `EmojiPicker.exe`.
           Silent Setup.exe installs: `/VERYSILENT /SUPPRESSMSGBOXES /ALLUSERS|/CURRENTUSER /TASKS=startup`.
 
           ### "Windows protected your PC" / SmartScreen

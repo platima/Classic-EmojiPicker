@@ -11,9 +11,9 @@
 ;
 ; Install modes: per-user is the default (no UAC). A startup dialog offers
 ; "install for all users" (elevates, installs to Program Files, HKLM Run key).
-; Command line for silent installs:
-;   per-user:  EmojiPicker-Setup-x.y.z.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /TASKS=startup
-;   all-users: EmojiPicker-Setup-x.y.z.exe /VERYSILENT /SUPPRESSMSGBOXES /ALLUSERS /TASKS=startup
+; Command line for silent installs (Classic-EmojiPicker-v<ver>-setup-win-x64.exe):
+;   per-user:  <setup>.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /TASKS=startup
+;   all-users: <setup>.exe /VERYSILENT /SUPPRESSMSGBOXES /ALLUSERS /TASKS=startup
 ;     (run from an elevated shell for unattended use; otherwise UAC prompts)
 
 #ifndef AppVersion
@@ -46,10 +46,11 @@ UninstallDisplayIcon={app}\{#AppExe}
 ; Inno's default shows "Classic Emoji Picker version x.y.z", duplicating it)
 UninstallDisplayName={#AppName}
 OutputDir=.\output
+; Standardised artifact name: <product>-v<version>-<type>-<os>-<arch>
 #ifdef FrameworkDependent
-OutputBaseFilename=EmojiPicker-Setup-{#AppVersion}-lite
+OutputBaseFilename=Classic-EmojiPicker-v{#AppVersion}-setup-lite-win-x64
 #else
-OutputBaseFilename=EmojiPicker-Setup-{#AppVersion}
+OutputBaseFilename=Classic-EmojiPicker-v{#AppVersion}-setup-win-x64
 #endif
 Compression=lzma2
 SolidCompression=yes

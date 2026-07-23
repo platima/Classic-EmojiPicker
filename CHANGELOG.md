@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Standardised release artifact names** to `Classic-EmojiPicker-v<version>-<type>-win-x64.<ext>` (e.g. `Classic-EmojiPicker-v0.1.9-setup-win-x64.msi`, `...-setup-lite-win-x64.exe`, `...-portable-win-x64.zip`), replacing the previous mix of `EmojiPicker-Setup-*` and `ClassicEmojiPicker-*` names. Takes effect on the next release
+
 ## [v0.1.9] - 2026-07-22
 
 ### Fixed (adversarial review pass)
